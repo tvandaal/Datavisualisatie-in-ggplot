@@ -23,7 +23,7 @@ p {
 }
 ```
 
-<em>Er bestaan verschillende manieren om de verdeling van een categorische variabele voor te stellen. Enkele voorbeelden daarvan zijn een staafdiagram (@sec-staafgram), een dotplot (@sec-dotplot) of een lollipop plot (@sec-lollipop). In dit hoofdstuk focussen we ons op hoe je dit type grafieken kan maken met `ggplot2`. We maken opnieuw gebruik van de pinguïndata en focussen ons op het visualiseren van de verdeling van de categorische variabele `species`. Op het einde van dit hoofdstuk vind je een overzicht van de verschillende functies en hun argumenten die je in dit hoofdstuk leerde (@sec-overzichtcat).</em> <br> <br>
+<em>Er bestaan verschillende manieren om de verdeling van een categorische variabele voor te stellen. Enkele voorbeelden daarvan zijn een staafdiagram (@sec-staafgram), een dotplot (@sec-dotplot) en een lollipop plot (@sec-lollipop). In dit hoofdstuk focussen we ons op hoe je dit type grafieken kan maken met `ggplot2`. We maken opnieuw gebruik van de pinguïndata en focussen ons op het visualiseren van de verdeling van de categorische variabele `species`. Op het einde van dit hoofdstuk vind je een overzicht van de verschillende functies en hun argumenten die je in dit hoofdstuk leerde (@sec-overzichtcat).</em> <br> <br>
 
 ## Staafdiagram {#sec-staafdiagram}
 
