@@ -1,0 +1,449 @@
+---
+title: "Introductie van `ggplot2`"
+format: 
+  live-html:
+    toc: true
+    toc-title: "In dit hoofdstuk"
+    number-sections: true
+engine: knitr
+---
+
+{{< include ./_extensions/r-wasm/live/_knitr.qmd >}}
+
+```{r include=F}
+library(tidyverse)
+set.seed(97464)
+data <- tibble(
+  x = rnorm(n = 10, mean = 5, sd = 1),
+  y = (x*0.5) + rnorm(n = 10, mean = 0, sd = .25),
+  z = c(rep("apple", 3), rep("banana", 5), rep("pear", 2))
+) 
+library(palmerpenguins)
+```
+```{css, echo=F}
+p {
+  text-align: justify
+}
+.cell-output {
+  border: black .25pt solid;
+  border-radius: 4px;
+}
+```
+
+<em>Je vraagt je misschien af waarom je de moeite zou doen om `ggplot2` te leren? Er zitten immers heel wat plot-functies ingebouwd in R. Er is echter een heel goede reden waarom wij fan zijn van `ggplot2`. Vooraleer we aan de slag gaan met `ggplot2`, leggen we daarom eerst uit waarom het de moeite loont om `ggplot2` te leren (@sec-plotbase). Vervolgens gaan we in @sec-grammar kort in op de *Grammar of Graphics* (de taal waarop `ggplot2` gebaseerd is) en zorgen dat je klaar bent om met `ggplot2` aan de slag gaan (@sec-aandeslag). Ten slotte maak je ook je eerste visualisaties in @sec-notendop en @sec-laag.</em>   
+<br>
+<br>
+
+## De plotfuncties in R? {#sec-plotbase}
+
+Wie een beetje vertrouwd is met R weet dat er standaard verschillende plot-functies in R zitten. Voorbeelden daarvan zijn de functies `hist()`, `boxplot()` en uiteraard ook `plot()`. Hieronder vind je een voorbeeld van een histogram, een boxplot en een scatterplot gecreëerd met deze functies. De `plot()`-functie is bijzonder omdat de output van deze functie zich aanpast aan de input die het krijgen. Geef je `plot()` twee kwantitatieve variabelen mee? Dan tovert `plot()` een scatterplot te voorschijn (zoals in het voorbeeld hierboven). Krijgt `plot()` een tabel als input? Dan wordt er een staafdiagram gecreëerd. De plot-functies die standaard in R zitten, bieden dus al de nodige mogelijkheden. Waarom is er dan nood aan een bijkomend R-package dat zich specifiek richt op visualisatie?
+
+::: panel-tabset
+#### `hist()`
+```{r eval = T, echo = T, fig.width = 4.5, fig.height=4.5, fig.align = 'center', class.source = 'fold-show'}
+hist(data$x, xlab = "x") 
+```
+
+#### `boxplot()`
+```{r eval = T, echo = T, fig.width = 4.5, fig.height=4.5, fig.align = 'center', class.source = 'fold-show'}
+boxplot(data$y, xlab = "y") 
+```
+
+#### `plot()`
+```{r eval = T, echo = T, fig.width = 4.5, fig.height=4.5, fig.align = "center"}
+plot(data$x, data$y, xlab = "x", ylab = "y")
+```
+::::
+
+`ggplot2` biedt enkele voordelen ten opzichte van de plot-functies die standaard in R zitten. Ten eerste is `ggplot2` veel **flexibeler** in gebruik dan de standaard plot-functies. De functies `hist()` of `boxplot()` laten bijvoorbeeld alleen maar toe om een specifiek soort grafiek te creëren. Je kan wel zaken aanpassen (bv. de kleur van een histogram) of toevoegen aan de plots (bv. een titel), maar deze mogelijkheden zijn vrij beperkt. Daarnaast is het ook niet zo evident om alle soorten visualisaties te creëren met de standaard plot-functies. `ggplot2` en de vele packages die erop verderbouwen laten je toe om **elk type grafiek te creëren** dat je wenst. Ten slotte is het `ggplot2` gebaseerd op een theorie over datavisualisatie, de *Grammar of Graphics*. Zoals de naam van de theorie al suggereert, is `ggplot2` gebaseerd op een generieke 'taal' (grammatica) voor het creëren van visualisaties. Dit maakt het gebruik van `ggplot2` veel **intuïtiever** dan dat van de standaard plot-functies in R.
+
+## Grammar of graphics {#sec-grammar}
+Het package `ggplot2` volgt de principes van de *Grammar of Graphics*. De *Grammar of Graphics* is een 'taal' ontworpen door Leland Wilkinson om grafieken te creëren. Wilkinson was een Amerikaanse statisticus en expert op het gebied van datavisualisatie. Hij introduceerde het concept in zijn boek "The Grammar of Graphics" (1999). Volgens de *Grammar of Graphics* kan elke visualisatie worden opgesplitst in dezelfde componenten (*layers* in *Grammar of Graphics*-taal). Voorbeelden van zulke *layers* zijn data, geometrische objecten en facetten. De *Grammar of Graphics* is dus een universeel systeem om visualisaties te creëren dat de basis vormt voor verschillende moderne visualisatietools (waaronder dus ook `ggplot2`).   
+
+Het **basisidee achter `ggplot2`** is dat je een plot in laagjes opbouwt. Er worden zeven verschillende soorten laagjes (*layers*) onderscheiden: [data]{style="color: #9979C5"}, [aesthetics]{style="color: #599AE9"} (bv. variabele op de x- en y-as), [geometries]{style="color: #4CEADA"} (bv. histogram, lijngrafiek), [facets]{style="color: #8BD581"}, [statistics]{style="color: #F4E549"} (bv. regressielijn), [coordinates]{style="color: #F2B44D"} en [theme]{style="color: #E67356"}. Elke laag voegt een nieuw element toe aan de plot. De animatie hieronder is overgenomen van [Thomas de Beus](https://medium.com/tdebeus/think-about-the-grammar-of-graphics-when-improving-your-graphs-18e3744d8d18){target="_blank"} en illustreert hoe een ggplot wordt opgebouwd aan de hand van verschillende *layers*.   
+
+![](https://miro.medium.com/max/1400/1*w1RnmuE7VRK9aCAbtW9KAQ.gif){width=60%}
+
+<br>
+Een visualisatie maken in `ggplot2` doe je dus laagje per laagje, een beetje zoals je een cake bakt. Op de figuur hieronder zie je hoe elk onderdeel van de cake overeenkomt met een *layer* in `ggplot2`. Als je een cake bakt, start je altijd met het leggen van de basis. In `ggplot2` doe je dat met de functie **`ggplot()`**. Elke visualisatie start dus met deze functie. Vervolgens specificeer je de ingrediënten met behulp van de functie [**`aes()`**] en de smaken met de functie **`scale_()`**. Dan voeg je laagjes toe aan je cake in de vorm van een [*geom*]. Ten slotte kan je de cake naar eigen believen afwerken ('stylen') door middel van de functie [*`theme()`*]{style="color: #4CEADA"}.
+<br>
+![](Figures/like_cake.png){width=300, height=400}
+<br>
+<span style="font-size: 10px"><em>Figuur overgenomen van [Tanya Shapiro](https://twitter.com/tanya_shapiro/status/1576935152575340544?s=20&t=IDPBrEMzKw8NNxA9TW2F4A){target="_blank"}</em></span>
+
+## Aan de slag? {#sec-aandeslag}
+Genoeg gepraat over het maken van visualisaties, hoog tijd om zelf aan de slag te gaan met `ggplot2`! Daarvoor hebben we twee dingen nodig: het R-package `ggplot2` én data om te plotten. Een leuke dataset om mee te werken, is de Palmer Penguin data. Deze dataset is afkomstig van onderzoek uitgevoerd door Kristen Gorman op het Palmer Station (Antarctica). Deze dataset bevat metingen en observaties over drie pinguïnsoorten (Adélie, Kinband en Gentoo) en werd verzameld in 2007, 2008 en 2009. Om de pinguïndata te kunnen gebruiken en visualiseren, dien je eerst de packages `tidyverse` en `palmerpenguins` te installeren en laden.   
+
+```{r eval = FALSE}
+install.packages("tidyverse")
+install.packages("palmerpenguins")
+
+library(tidyverse)
+library(palmerpenguins)
+```
+
+ De `tidyverse` is een verzameling van R-packages (waaronder `ggplot2`) dat speciaal ontworpen is om je codeeRweRk een pak intuïtiever, efficiënter en dus ook eenvoudiger te maken. Hoewel dit leertraject zich focust op datavisualisatie met `ggplot2`, introduceren we ook enkele functies uit het `dplyr`-package (dat ook bij de `tidyverse` hoort) dat speciaal ontworpen is om datamanipulatie *piece of cake* te maken. Als er functies uit `dplyr` worden gebruikt, dan worden deze kort toegelicht in de code zelf. Wil je een uitgebreidere introductie van `dplyr`, dan vind je hier een korte [tutorial](https://cran.r-project.org/web/packages/dplyr/vignettes/dplyr.html){target="_blank"}. Wil je meer weten over de `tidyverse` en de verschillende packages die er deel van uit maken, dan is het boek [R for data science](https://r4ds.hadley.nz/){target="_blank"} een goed vertrekpunt! 
+
+Maar nu genoeg over de `tidyverse` terug naar de pinguïns! Laad de data in RStudio via de functie `data()`. 
+```{r eval = FALSE}
+install.packages("tidyverse")
+install.packages("palmerpenguins")
+
+library(tidyverse)
+library(palmerpenguins)
+data("penguins")
+```
+
+Bekijk vervolgens tien random rijen uit de dataset met behulp van de functie `slice_sample()`.
+
+```{r}
+# Sampel 10 random rijden (n = 10) uit de data `penguins`
+slice_sample(penguins, n = 10)
+```
+
+Check via `glimpse()` welke variabelen in de dataset zitten en hoe deze gedefineerd zijn (als factor, ...). 
+
+```{r}
+# Functie die overzicht van variabelen in dataset geeft 
+glimpse(penguins)
+```
+
+In de dataset vind je de volgende acht variabelen terug:  
+- snavellengte (`bill_length_mm`)    
+- snaveldiepte (`bill_depth_mm`)    
+- vleugellengte (`flipper_length_mm`)       
+- lichaamsgewicht (`body_mass_g`)       
+- geslacht (`sex`)    
+- soort (`species`)   
+- kolonielocatie (`island`)   
+- jaar van observatie (`year`)  
+Meer info over deze variabelen en de Palmer Penguins data vind je [hier](https://education.rstudio.com/blog/2020/07/palmerpenguins-cran/){target="_blank"}. 
+
+## `ggplot2` in een notendop {#sec-notendop}
+Nu je een beetje vertrouwd bent met de pinguïndata kunnen we aan de slag met `ggplot2`! We bouwen een eerste visualisatie stap voor stop op en focussen daarbij op enkele typische *layers* (laagjes) die je in elke ggplot terugvindt.
+
+### Data en aesthetics
+
+Je start in `ggplot2` steeds met de functie `ggplot()`. In deze functie geef je aan welke data je wil gebruiken (`data = penguins`) en je specificeert ook de *aesthetics*. De *aesthetics* vormen de ingrediënten van je plot. Het zijn de variabelen die je wil plotten. De *aesthetics* specificeren doe je aan de hand van de functie `aes()`. In dit geval willen we de variabele `flipper_length_mm` op de x-as en de variabele `body_mass_g` op de y-as. 
+
+Kopieer de code hieronder naar RStudio op je eigen laptop en probeer deze uit. Zorg dat de packages `tidyverse` en `palmerpenguins` geladen zijn. Door hieronder op 'Plot' te klikken, vind je het verwachte resultaat terug.
+
+::: panel-tabset
+#### Code
+```{r eval = F, echo = T}
+ggplot(
+
+  ## Stap 1: data
+  data = penguins,
+  
+  ## Stap 2: aesthetics specificeren (mapping)
+  aes(
+    x = flipper_length_mm,
+    y = body_mass_g)
+)
+```
+
+#### Plot
+```{r eval = T, echo = F, fig.width = 5, fig.height=5, fig.align = 'center'}
+Plot <- ggplot(
+
+  ## Stap 1: data
+  data = penguins,
+  
+  ## Stap 2: aesthetics specificeren (mapping)
+  aes(
+    x = flipper_length_mm,
+    y = body_mass_g)
+)
+
+Plot
+```
+:::  
+
+### Geometries
+
+De vorige code levert een lege plot op! Dit komt omdat je alleen de basis voor je plot hebt gelegd (met de functie `ggplot()`), maar niet hebt aangegeven welk geometrisch object (*geom* in `ggplot2`-taal) je wilt gebruiken. Een *geom* representeert de visuele elementen die worden gebruikt om gegevens weer te geven in de plot. Elke *geom* komt overeen met een specifiek type grafische representatie, zoals punten, lijnen, balken of gebieden. *Geoms* bepalen dus hoe de gegevens visueel worden weergegeven. In ons voorbeeld  voegen we de `geom_point()` functie toe. Deze functie geeft elk datapunt weer als een punt op de plot? Vul je code aan en evalueer het resultaat. Je krijgt een *warning*. Wat betekent deze *warning*?  
+
+Kopieer de code hieronder naar RStudio op je eigen laptop en probeer deze uit. Door hieronder op 'Plot' te klikken, vind je het verwachte resultaat terug.
+
+::: panel-tabset
+#### Code
+```{r eval = F, echo = T}
+ggplot(
+
+  ## Stap 1: data
+  data = penguins,
+  
+  ## Stap 2: aesthetics specificeren (mapping)
+  aes(
+    x = flipper_length_mm,
+    y = body_mass_g)
+) +
+  ## Stap 3: voeg geometry toe
+  geom_point()
+```
+
+#### Plot
+```{r eval = T, echo = F, fig.width = 5, fig.height=5, fig.align = 'center'}
+Plot <- ggplot(
+
+  ## Stap 1: data
+  data = penguins,
+  
+  ## Stap 2: aesthetics specificeren (mapping)
+  aes(
+    x = flipper_length_mm,
+    y = body_mass_g)
+)+
+  ## Stap 3: voeg geometry toe
+  geom_point()
+
+Plot
+```
+:::  
+
+De *warning* wijst erop dat er twee ontbrekende observaties zijn (en dat deze uiteraard niet geplot zijn). 
+
+### Facets
+
+Stel dat we het verband tussen het lichaamsgewicht en vleugellengte per pinguïnsoort willen plotten. We willen m.a.w een aparte scatterplot per soort (*small multiples*). Dit kan je heel eenvoudig realiseren met behulp van de functie `facet_wrap()`. Tussen de haakjes geef je aan op basis van welke variabele de facets moeten worden gecreëerd (in dit geval `species`). Deze variabele dient vooraf gegaan te worden door een tilde (`~`). 
+
+Kopieer de code hieronder naar RStudio op je eigen laptop en probeer deze uit. Door hieronder op 'Plot' te klikken, vind je het verwachte resultaat terug.
+
+::: panel-tabset
+#### Code
+```{r eval = F, echo = T}
+ggplot(
+
+  ## Stap 1: data
+  data = penguins,
+  
+  ## Stap 2: aesthetics specificeren (mapping)
+  aes(
+    x = flipper_length_mm,
+    y = body_mass_g)
+) +
+  ## Stap 3: voeg geometry toe
+  geom_point() +
+  
+  ## Stap 4: definieer facets
+  facet_wrap(~species)
+```
+
+#### Plot
+```{r eval = T, echo = F, fig.width = 5, fig.height=5, fig.align = 'center'}
+Plot <- ggplot(
+
+  ## Stap 1: data
+  data = penguins,
+  
+  ## Stap 2: aesthetics specificeren (mapping)
+  aes(
+    x = flipper_length_mm,
+    y = body_mass_g)
+)+
+  ## Stap 3: voeg geometry toe
+  geom_point() +
+  
+  ## Step 4: definieer facets
+  facet_wrap(~species)
+
+Plot
+```
+:::  
+
+### Theme
+
+In een laatste stap passen we het plot-thema aan. Als je geen plot-thema meegeeft, dan gebruikt deze het default plot-thema. Dit plot-thema heeft echter een grijze achtergrond die verder niets bijdraagt aan de plot (*chart junk*!). Verander daarom het plot-thema naar `theme_minimal()`. Voeg dit plot-thema standaard toe aan alle plots die je creëert!   
+
+Kopieer de code hieronder naar RStudio op je eigen laptop en probeer deze uit. Door hieronder op 'Plot' te klikken, vind je het verwachte resultaat terug.
+
+::: panel-tabset
+#### Code
+```{r eval = F, echo = T}
+ggplot(
+
+  ## Stap 1: data
+  data = penguins,
+  
+  ## Stap 2: aesthetics specificeren (mapping)
+  aes(
+    x = flipper_length_mm,
+    y = body_mass_g)
+) +
+  ## Stap 3: voeg geometry toe
+  geom_point() +
+  
+  ## Stap 4: definieer facets
+  facet_wrap(~species) +
+  
+  ## Stap 5: pas thema aan
+  theme_minimal()
+```
+
+#### Plot
+```{r eval = T, echo = F, fig.width = 5, fig.height=5, fig.align = 'center'}
+Plot <- ggplot(
+
+  ## Stap 1: data
+  data = penguins,
+  
+  ## Stap 2: aesthetics specificeren (mapping)
+  aes(
+    x = flipper_length_mm,
+    y = body_mass_g)
+)+
+  ## Stap 3: voeg geometry toe
+  geom_point() +
+  
+  ## Step 4: definieer facets
+  facet_wrap(~species) +
+  
+  ## Stap 5: pas thema aan
+  theme_minimal()
+
+Plot
+```
+:::  
+
+## Een plot laagje per laagje opbouwen {#sec-laag}
+
+Je bouwde net je allereerste visualisatie in `ggplot2`laagje voor laagje op! Uiteraard kan je nog veel meer zaken toevoegen. Hieronder vind je een uitgebreider voorbeeld terug. 
+
+```{r, echo = F, fig.align = "center", fig.width= 16, fig.height = 8, warning =F, message=F}
+
+P1 <- 
+  penguins %>%
+  filter(!is.na(sex)) %>%
+  ggplot(aes(x = flipper_length_mm, y = body_mass_g )) 
+
+P2 <- 
+  P1 + 
+  geom_point() 
+
+P3 <- 
+  P2 +
+  geom_point(
+    aes(color = sex, shape = sex), 
+    alpha = .8, 
+    size = 3
+    ) +
+  scale_color_manual(
+    values = c("darkorange","purple")
+    ) 
+
+P4 <- P3 +
+  geom_smooth(method = "lm") 
+
+P5 <- P3 +
+  geom_smooth(
+    aes(color = sex),
+    se = F,
+    method = "lm") 
+
+P6 <- 
+  P5 +
+  scale_x_continuous("Flipper length (mm)") +
+  scale_y_continuous("Body Mass (g)")
+
+P7 <- P6 + theme_minimal()
+
+P8 <- P7 +
+  labs(
+    title = "Palmer penguins",
+    subtitle = "Flipper length and body mass for both sexes"
+    )
+
+library(patchwork)
+P1 + P2 + P3 + P4 + P5 + P6 + P7 + P8 + 
+  plot_layout(ncol = 4) +
+  plot_annotation(tag_levels = "1", tag_prefix = "(", tag_suffix = ")")
+
+```
+
+We leggen stap per stap uit wat er precies wordt toegevoegd aan de plot. Daarbij wordt ook de nodige code meegegeven. Je zal merken dat er in de code gebruik gemaakt wordt van functies uit `dplyr`. Je vindt twee manieren terug om code 'aan elkaar te rijgen'. In `ggplot2` gebeurt dit met behulp van een **`+`**. `dplyr` maakt echter gebruik van de *pipe* (**`%>%`**) om verschillende commando's aan elkaar te rijgen.  
+
+**Laag 1**<br>
+De basis van de plot wordt gelegd met de functie `ggplot()`. Er wordt aangegeven dat de variabele `flipper_length_mm` op de x-as dient te komen en de variabele `body_mass_g` op de y-as. De plot wordt weggeschreven naar een object met de naam 'P1'. 
+
+```{r eval=F}
+P1 <- 
+  ## Gebruik de dataset penguins
+  penguins %>%
+  ## Gebruik alleen rijen waarin sex NIET NA is 
+  filter(!is.na(sex)) %>%
+  ggplot(aes(x = flipper_length_mm, y = body_mass_g )) 
+```
+
+**Laag 2**<br>
+Er wordt een *geom* toegevoegd aan de plot P1 (`geom_point()`).  
+
+```{r eval=F}
+P2 <- 
+  P1 + 
+  geom_point() 
+```
+
+**Laag 3**<br>
+Om de datapunten een andere vorm en kleur te geven naar geslacht, worden in `geom_point()` nieuwe ingrediënten (*aesthetics*) toegevoegd d.m.v. **`aes(color = sex, shape = sex)`**. Omdat de datapunten soms overlappen, wordt er transparantie toegevoegd aan de punten (**`alpha = .8`**) en ook de grootte van de punten wordt aangepast (**`size = 3`**). Tenslotte wordt er ook aangegeven welke kleuren er gebruikt dienen te worden via `scale_color_manual(values = c("darkorange", "purple"))`.   
+
+```{r eval=F}
+P3 <- 
+  P2 +
+  geom_point(
+    aes(color = sex, shape = sex), 
+    alpha = .8, 
+    size = 3    
+    ) +
+  scale_color_manual(
+    values = c("darkorange","purple")
+    ) 
+```
+
+**Laag 4**<br>
+In de vierde stap wordt een trendlijn toegevoegd aan de plot. Hiervoor wordt een tweede *geom* gebruikt: `geom_smooth()`. Met het argument **`method = "lm"`** geven we aan dat we een lineaire trendlijn willen.   
+
+```{r eval=F}
+P4 <- P3 + geom_smooth(method = "lm") 
+```
+
+**Laag 5**<br>
+We willen graag een aparte trendlijn voor de mannelijke en vrouwelijke pinguïns. Dit wordt aangegeven door `aes(color = sex)` toe te voegen aan de functie `geom_smooth()`. Het argument **`se = F`** geeft aan dat we GEEN betrouwbaarheidsinterval rond de trendlijnen willen.     
+
+```{r eval=F}
+P5 <- P3 +
+  geom_smooth(
+    aes(color = sex),
+    se = F,
+    method = "lm"
+    )
+```
+
+**Laag 6**<br>
+De labels van de x- en y-as krijgen een andere naam via de functies `scale_x_continuous()` en `scale_y_continuous()`.
+
+```{r eval=F}
+P6 <- 
+  P5 +
+  scale_x_continuous("Flipper length (mm)") +
+  scale_y_continuous("Body Mass (g)")
+```
+
+**Laag 7**<br>
+In de zevende stap wordt het plot-thema aangepast naar `theme_minimal()`.     
+```{r eval=F}
+P7 <- P6 + theme_minimal()
+```
+
+**Laag 8**<br>
+De laatste stap bestaat uit het toevoegen van een titel en subtitel. Hiervoor wordt de `labs()`-functie gebruikt (via de argumenten **`title`** en **`subtitle`**. 
+
+```{r eval=F}
+P8 <- P7 +
+  labs(
+    title = "Palmer penguins",
+    subtitle = "Flipper length and body mass for both sexes"
+    )
+```
+
+Na deze korte introductie duiken we verder de wereld van `ggplot2` in.

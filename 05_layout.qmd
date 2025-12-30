@@ -1,0 +1,352 @@
+---
+title: "Lay-out van een ggplot aanpassen"
+format: 
+  live-html:
+    toc: true
+    number-sections: true
+engine: knitr
+webr: 
+  packages: ['ggplot2', 'tidyverse', 'palmerpenguins']
+---
+
+{{< include ./_extensions/r-wasm/live/_knitr.qmd >}}
+
+```{r include=F}
+library(tidyverse)
+library(palmerpenguins)
+library(webr)
+```
+```{css, echo=F}
+p {
+  text-align: justify
+}
+```
+
+Dit hoofdstuk gaat in op hoe je de lay-out van de verschillende componenten van een visualisatie kan aanpassen. We werken daarbij met de puntenwolk die we in hoofdstuk vier maakten.
+
+## Plot thema aanpassen
+
+In `ggplot2` zitten een aantal ingebouwde plot-thema's. Zoals aangegeven in het eerste hoofdstuk van dit OLP gebruik je als default plot-thema bij voorkeur `theme_minimal()`. De onderstaande thema's zitten echter ook standaard in `ggplot2`:  
+
+- `theme_bw()`  
+- `theme_linedraw()`  
+- `theme_light()`  
+- `theme_dark()`  
+- `theme_classic()`  
+- `theme_void()`  
+
+Vervang `theme_minimal()` in de code hieronder en test de andere thema's zelf uit!
+```{webr-r}
+penguins %>%
+  filter(!is.na(sex)) %>%
+  ggplot(
+  aes(
+    x = body_mass_g,
+    y = flipper_length_mm,
+    shape = sex,
+    color = sex
+    )
+  ) +
+  geom_point(
+    size = 1,
+    alpha = 0.75
+  ) +
+  geom_smooth(
+    method = "lm",
+    se = FALSE,
+    linewidth = 0.5
+  ) +
+  scale_color_brewer(
+    type = "qual",
+    palette = "Set2"
+  ) +
+  scale_shape_manual(
+    values = c(15, 16)
+    ) +
+  labs(
+    title = "Puntenwolk van lichaamsgewicht en vleugellengte",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009",
+    x = "Lichaamsgewicht (in g)",
+    y = "Vleugellengte (in mm)"
+  ) + 
+  theme_minimal() 
+```
+
+## Anatomie van een (gg)plot
+
+Hoewel de ingebouwde thema's handig zijn om van te vertrekken, wil je vaak toch nog bepaalde aspecten van de lay-out naar je hand zetten. Dit kan je doen met behulp van de functie `theme()`. Omdat je via deze functie echt elke component van een plot kan aanpassen, is het belangrijk om een zicht te krijgen op die verschillende componenten en de gepaste terminologie ervoor.
+
+De figuur hieronder is overgenomen van de blog van Isabella Benabaye en geeft een overzicht van de verschillende componenten van de lay-out van een ggplot. Je kan deze figuur [hier](https://isabella-b.com/files/ggplot2-theme-elements-reference-v2.pdf){target="_blank"} ook downloaden als pdf. Bekijk de figuur en probeer de verschillende componenten van de plot te classificeren. Welke groepen onderscheid jij?
+
+```{r echo=F}
+knitr::include_graphics("Figures/anatomy_ggplot2.png")
+```
+
+Je kan de componenten classificeren in de volgende 'groepen'. Ten eerste bestaan heel wat componenten uit **tekst**. Voorbeelden hiervan zijn de titel van de plot (*plot.title* in `ggplot2` taal), maar ook de labels op de assen (*axis.text* in `ggplot2` taal) en de voetnoot (*plot.caption* in `ggplot2` taal). Daarnaast zijn er ook heel wat componenten die eigenlijk **lijnen** weergeven. De gridlijnen (*panel.grid* in `ggplot2` taal) zijn daar het duidelijkste voorbeeld van, maar ook de beide assen zijn niet meer of minder dan een lijn (*axis.line* in `ggplot2` taal). Een derde groep componenten zijn **rechthoeken**. In de figuur hierboven is de achtergrond van de legende daar een voorbeeld van (*legend.background* in `ggplot2` taal). 
+
+## De functie `theme()`
+
+De functie `theme()` maakt gebruik van de indeling in de tekst-, lijn- en rechthoekige elementen om de verschillende componenten van een plot aan te passen. Deze elementen zijn 'vertaald' naar verschillende functies:  
+
+- `element_text()`: aanpassen van tekst-componenten  
+- `element_line()`: aanpassen van lijn-componenten  
+- `element_rect()`: aanpassen van rechthoekige-componenten  
+
+Hieronder wordt het gebruik van de verschillende elementen geïllustreerd.
+
+### Tekst-componenten aanpassen
+
+Om componenten die tekst weergeven aan te passen via `theme()`, is het belangrijk dat je het argument kent dat naar elk van deze componenten verwijst. Hieronder vind je een overzicht van de belangrijkste tekst-componenten:  
+
+- **`plot.title`**: de titel van de plot   
+- **`plot.subtitle`**: de subtitel van de plot   
+- **`plot.caption`**: een voetnoot bij de plot   
+- **`axis.title`**: de titel van beide assen (beide titels krijgen dezelfde lay-out)  
+- **`axis.title.x`** en **`axis.title.y`**: de titel van de x-as en van de y-as (op die manier kan je elke titel een andere lay-out geven)       
+- **`axis.text`**: de labels op beide assen (de labels op beide assen krijgen dezelfde lay-out)   
+- **`axis.text.x`** en **`axis.text.y`**: de labels op x-as en de y-as (op die manier kan je de labels op beide assen een andere lay-out geven)    
+- **`legend.title`**: de titel van de legende   
+
+Om de lay-out van elk van deze componenten te specificeren, kan je gebruik maken van de `element_text()`-functie. Daarbij zijn de drie belangrijkste **argumenten**: **`color`** (kleur van de letters), **`size`** (grootte van de letters) en  **`face`** (vet = `"bold"`, cursief = `"italic"`, vet en cursief = `"bold.italic"`). Als je een bepaalde tekstelement wil weglaten, dan vervang je `element_text()` door `element_blank()`.  
+
+In de code hieronder kregen alle tekstelementen dezelfde lay-out. Experimenteer met de verschillende mogelijkheden. Probeer ook eens één van de elementen te verwijderen met behulp van de functie `element_blank()`. Kan je de titels van de x- en de y-as ook een andere lay-out geven? 
+
+```{webr-r}
+penguins %>%
+  filter(!is.na(sex)) %>%
+  ggplot(
+  aes(
+    x = body_mass_g,
+    y = flipper_length_mm,
+    shape = sex,
+    color = sex
+    )
+  ) +
+  geom_point(
+    size = 1,
+    alpha = 0.75
+  ) +
+  geom_smooth(
+    method = "lm",
+    se = FALSE,
+    linewidth = 0.5
+  ) +
+  scale_color_brewer(
+    type = "qual",
+    palette = "Set2"
+  ) +
+  scale_shape_manual(
+    values = c(15, 16)
+    ) +
+  labs(
+    title = "Puntenwolk van lichaamsgewicht en vleugellengte",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009",
+    x = "Lichaamsgewicht (in g)",
+    y = "Vleugellengte (in mm)"
+  ) + 
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      face = "bold", size = 12, color = "grey50"
+      ),
+    plot.subtitle = element_text(
+      face = "italic", size = 12, color = "grey50"
+      ),
+    axis.title = element_text(
+      face = "italic", size = 12, color = "grey50"
+      ),
+    axis.text = element_text(
+      face = "italic", size = 12, color = "grey50"
+      ),
+    legend.title = element_text(
+      face = "italic", size = 12, color = "grey50"
+      )
+
+  )
+```
+
+### Lijn-componenten aanpassen
+
+Het aanpassen van lijn-componenten gebeurt op een gelijkaardige manier waarbij je gebruik maakt van de functie `element_line()`. Hieronder vind je een lijst van de belangrijkste componenten die je op deze manier kan aanpassen:  
+
+- **`panel.grid.major`**: de gridlijnen die vanuit de breaks op beide assen vertrekken (beiden krijgen dezelfde lay-out)  
+- **`panel.grid.major.x`** en **`panel.grid.major.y`**: de gridlijnen die vanuit de breaks op de x- en y-as vertrekken (op die manier kan je de gridlijnen vertrekkend vanuit beide assen een andere lay-out geven)   
+- **`panel.grid.minor`**: de gridlijnen die tussen de 'major' gridlijnen liggen (beiden krijgen dezelfde lay-out)
+- **`panel.grid.minor.x`** en **`panel.grid.minor.y: de gridlijnen die tussen de 'major' gridlijnen liggen op de x- en de y-as (op die manier kan je de 'minor' gridlijnen op de beide assen een andere lay-out geven)  
+- **`axis.line`**: de assen (beiden krijgen dezelfde lay-out)    
+- **`axis.line.x`** en **`axis.line.y`**: de x- en de y-as (op die manier kan je beiden een andere lay-out geven)   
+- **`axis.ticks`**: de lijntjes die bij de breaks op beide assen staan (beiden krijgen dezelfde lay-out)    
+- **`axis.ticks.x`** en  **`axis.ticks.y`**: de lijntjes die bij de breaks op de x- en de y-as staan (op die manier kan je beiden een andere lay-out geven)   
+
+Om de lay-out van deze elementen aan te passen, maak je gebruik van de functie `element_line()` en de argumenten **color** (kleur van de lijn), **linewidth** (dikte van de lijn) en **linetype** (lijntype: "solid", "dashed", "dotted", "dotdash", "longdash", "twodash", "blank"). Om een element weg te halen, gebruik je opnieuw de functie `element_blank()`.
+
+Experimenteer in de code hieronder met de lay-out van de gridlijnen. Je kan uiteraard ook de code toevoegen om de lay-out van de andere lijn-componenten aan te passen.
+
+```{webr-r}
+penguins %>%
+  filter(!is.na(sex)) %>%
+  ggplot(
+  aes(
+    x = body_mass_g,
+    y = flipper_length_mm,
+    shape = sex,
+    color = sex
+    )
+  ) +
+  geom_point(
+    size = 1,
+    alpha = 0.75
+  ) +
+  geom_smooth(
+    method = "lm",
+    se = FALSE,
+    linewidth = 0.5
+  ) +
+  scale_color_brewer(
+    type = "qual",
+    palette = "Set2"
+  ) +
+  scale_shape_manual(
+    values = c(15, 16)
+    ) +
+  labs(
+    title = "Puntenwolk van lichaamsgewicht en vleugellengte",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009",
+    x = "Lichaamsgewicht (in g)",
+    y = "Vleugellengte (in mm)"
+  ) + 
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      face = "bold", size = 14, color = "black"
+      ),
+    plot.subtitle = element_text(
+      face = "italic", size = 12, color = "grey50"
+      ),
+    panel.grid.major = element_line(
+      color = "grey80", linewidth = 0.2
+    ),
+    panel.grid.minor = element_blank()
+  )
+```
+
+### Rechthoekige componenten aanpassen
+
+Er zijn slechts een beperkt aantal rechthoekige elementen. Je kan deze elementen aanpassen via de functie `element_rect()`. De twee belangrijkste elementen zijn **`panel.background`** en **`legend.background`**. Via deze argumenten kan je respectievelijk de achtergrond van de plot en van de legende aanpassen. Je kan daarbij de kleur van de omtrek (**`color`**) en de opvulkleur (**`fill`**) aanpassen. In de code hieronder zijn beide argumenten toevoegen aan de `theme()`-functie. Experimenteer met verschillende waardes voor **`fill`** en **`color`** en kijk wat er gebeurt. Merk op dat je ook kan aangeven dat geen opvulling of omtrekkleur wil. Hiervoor gebruik je  `NA`.
+
+```{webr-r}
+penguins %>%
+  filter(!is.na(sex)) %>%
+  ggplot(
+  aes(
+    x = body_mass_g,
+    y = flipper_length_mm,
+    shape = sex,
+    color = sex
+    )
+  ) +
+  geom_point(
+    size = 1,
+    alpha = 0.75
+  ) +
+  geom_smooth(
+    method = "lm",
+    se = FALSE,
+    linewidth = 0.5
+  ) +
+  scale_color_brewer(
+    type = "qual",
+    palette = "Set2"
+  ) +
+  scale_shape_manual(
+    values = c(15, 16)
+    ) +
+  labs(
+    title = "Puntenwolk van lichaamsgewicht en vleugellengte",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009",
+    x = "Lichaamsgewicht (in g)",
+    y = "Vleugellengte (in mm)"
+  ) + 
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      face = "bold", size = 14, color = "black"
+      ),
+    plot.subtitle = element_text(
+      face = "italic", size = 12, color = "grey50"
+      ),
+    panel.background = element_rect(
+      color = NA, fill = "grey95"
+    ),
+    legend.background = element_rect(
+      color = "black", fill = "grey95"
+    )
+  )
+```
+
+### Positie van de legende, titel en subtitel aanpassen
+
+De argumenten van de functie `theme()` die de positie van de legende (**`legend.position`**), de titel (**`plot.title.position`**) en de subtitel (**`plot.subtitle.position`**) bepalen, maken geen gebruik van één van de elementen die hierboven werden uitgelegd. De positie van de legende kan je bepalen via `"right"` (default-waarde), `"left"`, `"top"`, `"bottom"` of `"none"` (verwijderd de legende). Voor de positie van de titel kan je alleen kiezen uit `"plot"` of `"panel"`. Test de verschillende opties hieronder uit.
+
+```{webr-r}
+penguins %>%
+  filter(!is.na(sex)) %>%
+  ggplot(
+  aes(
+    x = body_mass_g,
+    y = flipper_length_mm,
+    shape = sex,
+    color = sex
+    )
+  ) +
+  geom_point(
+    size = 1,
+    alpha = 0.75
+  ) +
+  geom_smooth(
+    method = "lm",
+    se = FALSE,
+    linewidth = 0.5
+  ) +
+  scale_color_brewer(
+    type = "qual",
+    palette = "Set2"
+  ) +
+  scale_shape_manual(
+    values = c(15, 16)
+    ) +
+  labs(
+    title = "Puntenwolk van lichaamsgewicht en vleugellengte",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009",
+    x = "Lichaamsgewicht (in g)",
+    y = "Vleugellengte (in mm)"
+  ) + 
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      face = "bold", size = 14, color = "black"
+      ),
+    plot.subtitle = element_text(
+      face = "italic", size = 12, color = "grey50"
+      ),
+    panel.grid.major = element_line(
+      color = "grey80", linewidth = 0.2
+    ),
+    panel.grid.minor = element_blank(),
+    legend.position = "left",
+    plot.title.position = "panel"
+  )
+```
+
+## Overzicht van functies en argumenten uit hoofdstuk 5
+
+De onderstaande functies en argumenten zijn in dit hoofdstuk aan bod gekomen:  
+
+- functie `theme()` en de argumenten **`plot.title`**, **`plot.subtitle`** **`plot.caption`**, **`axis.title`**, **`axis.title.x`**, **`axis.title.y`**, **`axis.text`**, **`axis.text.x`**, **`axis.text.y`**, **`panel.grid.major`**, **`panel.grid.major.x`**, **`panel.grid.major.y`**, **`panel.grid.minor`**, **`panel.grid.minor.x`**, **`panel.grid.minor.y`**, **`axis.line`**, **`axis.line.x`**, **`axis.line.y`**, **`axis.ticks`**, **`axis.ticks.x`**, **`axis.ticks.y`**, **`panel.background`**, **`legend.background`**, **`legend.position`** en **`plot.title.position`**   
+- functie `element_text()` en de argumenten **`color`**, **`face`** en **`size`**      
+- functie `element_line()` en de argumenten **`linewidth`**, **`linetype`** en **`color`**
+- functie `element_rect()` en de argumenten  **`fill`** en **`color`**   
+
+Let op! De meeste functies beschikken over veel meer argumenten dan deze die in dit hoofdstuk aan bod zijn gekomen. Om hier een overzicht van te krijgen, kan je de help-functie gebruiken. De functie `theme()` heeft tientallen argumenten die het mogelijk maken om elke component van een visualisatie te lay-outen. Je vindt een overzicht van alle argumenten via deze [link](https://ggplot2.tidyverse.org/reference/theme.html){target="_blank"}.
+
+

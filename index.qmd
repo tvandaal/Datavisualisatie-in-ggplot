@@ -1,0 +1,44 @@
+---
+title: " "
+format: 
+  live-html:
+    toc: false
+    number-sections: false
+engine: knitr
+---
+
+{{< include ./_extensions/r-wasm/live/_knitr.qmd >}}
+
+```{css, echo=F}
+p {
+  text-align: justify
+}
+```
+<br>Dit leertraject introduceert je in het creëren van  datavisualisaties met behulp van het R-package `ggplot2`. Daarbij is het geenzins de bedoeling om je alle mogelijke types grafieken te leren maken. (Dat is onmogelijk!) Het is wel de bedoeling om je de basisprincipes achter `ggplot2` mee te geven zodat je nadien zelf gemakkelijk andere types visualisaties kan maken. De focus ligt dus voornamelijk op het gebruik van `ggplot2` en niet (of slechts in beperkte mate) op principes van goede datavisualisatie. Dat neemt niet weg dat er doorheen het leertraject wel af en toe verwezen wordt naar deze principes. Hieronder vind je een overzicht van de leerdoelen van dit leertraject. 
+
+:::{.callout-tip  icon=false}
+## Leerdoelen
+Na het doornemen van dit leertraject zal je:  
+
+- vertrouwd zijn met de verschillende 'ingrediënten' van een ggplot (aesthetics, geoms, scales, labs, theme);   
+- zelf een visualisatie kunnen creëren van één kwalitatieve of kwantitatieve variabele;  
+- zelf een visualisatie kunnen creëren van twee of meer variabelen;  
+- de 'look' van een visualisatie kunnen aanpassen;  
+- kennismaken met enkele packages die extensies op `ggplot2` aanbieden.
+:::
+   
+Er is maar één manier om vertrouwd te raken met `ggplot2` en dat is door er zelf mee aan de slag gaan. Je zal dan ook regelmatig gevraagd worden om code uit te proberen door deze te kopiëren naar je eigen script (op je eigen laptop) of door 'live' code te runnen. Om dat laatste mogelijk te maken, gebruiken we het package `webR`. Dit package opstarten en de nodige zaken ervoor preparen vraagt telkens even tijd. Daarom laden we hier al de nodige packages en data in.  De warnings en andere boodschappen die je krijgt, mag je gewoon negeren. 
+
+```{webr-r}
+#| autorun: true
+#| runbutton: false
+#| warning: false
+#| message: false
+library(tidyverse)
+library(palmerpenguins)
+data("penguins")
+```
+
+Dit leertraject bestaat uit verschillende hoofdstukken. Je neemt best de hoofdstukken in de aangegeven volgorde door. Functies en argumenten die je in het ene hoofdstuk leert, worden in de volgende hoofdstukken slechts kort (of niet) herhaald. Op het einde van elk hoofdstuk vind je een overzicht van de functies en argumenten die in dat hoofdstuk aan bod kwamen. 
+
+Veel `ggplot2`-plezier!       

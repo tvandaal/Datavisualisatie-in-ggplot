@@ -1,0 +1,1107 @@
+---
+title: "Eén categorische variabele visualiseren"
+format: 
+  live-html:
+    toc: true
+    number-sections: true
+engine: knitr
+webr: 
+  packages: ['ggplot2', 'tidyverse', 'palmerpenguins']
+---
+
+{{< include ./_extensions/r-wasm/live/_knitr.qmd >}}
+
+```{r include=F}
+library(tidyverse)
+library(palmerpenguins)
+library(webr)
+```
+
+```{css, echo=F}
+p {
+  text-align: justify
+}
+```
+
+<em>Er bestaan verschillende manieren om de verdeling van een categorische variabele voor te stellen. Enkele voorbeelden daarvan zijn een staafdiagram (@sec-staafgram), een dotplot (@sec-dotplot) of een lollipop plot (@sec-lollipop). In dit hoofdstuk focussen we ons op hoe je dit type grafieken kan maken met `ggplot2`. We maken opnieuw gebruik van de pinguïndata en focussen ons op het visualiseren van de verdeling van de categorische variabele `species`. Op het einde van dit hoofdstuk vind je een overzicht van de verschillende functies en hun argumenten die je in dit hoofdstuk leerde (@sec-overzichtcat).</em> <br> <br>
+
+## Staafdiagram {#sec-staafdiagram}
+
+Een eerste mogelijkheid om de verdeling van de variabele `species` te visualiseren is gebruik maken van een staafdiagram. Hieronder vind je een voorbeeld van een staafdiagram die je op het einde van dit deel zal kunnen maken.
+
+```{r echo=F}
+ggplot(
+  penguins,
+  aes(
+    x = fct_infreq(species)
+    )
+  ) +
+  geom_bar(
+    width = .5,
+    fill = "grey",
+    color = "black"
+  ) +
+  geom_text(
+    aes(label = after_stat(count)),
+    stat = "count",
+    hjust = -0.2, 
+    size = 3,
+    color = "black"
+    ) +
+  labs(
+    x = "Pinguïnsoort",
+    y = "Aantal",
+    title = "Staafdiagram van aantal pinguïns per soort",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009"
+  ) +
+  coord_flip() +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic"),
+    panel.grid = element_blank(),
+    axis.title = element_blank(),
+    axis.text.x = element_blank()
+  )
+```
+
+### Staafdiagram met `geom_bar()` of `geom_col()`
+
+Om een staafdiagram te maken kan je in ggplot gebruik maken van twee verschillende *geoms*: `geom_bar()` of `geom_col()`. Hieronder vind je dezelfde staafdiagram gecreërd met `geom_bar()` (links) of `geom_col()` (rechts). Vergelijk de code en probeer beide opties uit. Wat is het verschil tussen beide functies?
+
+::::: grid
+::: g-col-6
+```{r echo=F}
+ggplot(
+  data = penguins,
+  aes(
+    x = species
+    )
+  ) +
+  geom_bar() +
+  theme_minimal()
+```
+
+```{r eval=F}
+ggplot(
+  data = penguins,
+  aes(
+    x = species
+    )
+  ) +
+  geom_bar() +
+  theme_minimal()
+```
+:::
+
+::: g-col-6
+```{r echo=F}
+count_data <- 
+  penguins %>%
+  ## Tel pinguins per soort (species)
+  ## Schrijf deze weg in de kolom `count`
+  count(species, name = "count")
+
+ggplot(
+  count_data,
+  aes(
+    x = species,
+    y = count
+    )
+  ) +
+  geom_col() +
+  theme_minimal()
+```
+
+```{r eval=F}
+count_data <- 
+  penguins %>%
+  ## Tel pinguins per soort (species)
+  ## Schrijf deze weg in de kolom `count`
+  count(species, name = "count")
+
+ggplot(
+  data = count_data,
+  aes(
+    x = species,
+    y = count
+    )
+  ) +
+  geom_col() +
+  theme_minimal()
+```
+:::
+:::::
+
+Het grote verschil tussen beide functies is dat `geom_bar()` op de achtergrond het telwerk voor jou uitvoert, terwijl `geom_col()` ervanuit gaat dat jij dat telwerk al deed. Om `geom_col()` te kunnen gebruiken, dien je dus een dataset aan te maken die de frequenties per pinguïnsoort bevat. Dit merk je ook aan het verschil in *aesthetics*. In `geom_bar()` wordt alleen een x-variabele gespecificeerd (de categorische variabele `species`). De functie `geom_col()` vraagt zowel om een x-variabele (de categorische variabele `species`) als een y-variabele (de numerieke variabele die de aantallen bevat `count`). Vanaf hier maken we gebruik van de functie `geom_bar()`. De zaken die je daarbij leert, kan je ook toepassen bij het gebruik van `geom_col()`. Als de toepassing voor `geom_col()` toch anders, is dan tonen we deze ook.
+
+### Basisargumenten `geom_bar()`
+
+In het staafdiagram hieronder zijn er drie argumenten toegevoegd aan de functie `geom_bar()`:
+
+-   **width**: bepaalt de breedte van de staven (default = 1).\
+-   **fill**: bepaalt de opvulkleur van de staven.\
+-   **color**: bepaalt de kleur van de lijn rondom de staven.
+
+Laat de code hieronder lopen en bekijk het staafdiagram. Speel vervolgens met de waarden van de argumenten **`width`**, **`fill`** en **`color`** en kijk wat er gebeurt.
+
+```{webr-r}
+ggplot(
+  data = penguins,
+  aes(
+    x = species
+    )
+  ) +
+  geom_bar(
+    width = .5,
+    fill = "grey",
+    color = "black"
+  ) +
+  theme_minimal()
+```
+
+### Staven ordenen
+
+Als je de functie `geom_bar()` gebruikt, kan je de staven van groot naar klein ordenen met de functie `fct_infreq()`. Dit is een functie uit het package `forcats`, een ander package uit de tidyverse. (Als je in het begin van je R-sessie het package `tidyverse` laat, staan dus ook de functies uit het package `forcats` klaar voor gebruik.) Om deze functie te kunnen gebruiken, dient de variabele `species` als factor in de dataset te zitten (wat al het geval is). De functie `fct_infreq()` zorgt ervoor dat de levels van de factor geplot worden volgens de frequentie waarmee ze voorkomen.
+
+Als je de code hieronder laat lopen, zal je vaststellen dat de meest voorkomende pinguïnsoort Adélie is, gevolgd door Gentoo en Chinstrap. Wil je de staven van klein naar groot ordenen? Vervang dan `fct_rev()` in de code hieronder door `fct_rev(fct_infreq(species))` en run de code opnieuw.
+
+```{webr-r}
+ggplot(
+  data = penguins,
+  aes(
+    x = fct_infreq(species)
+    )
+  ) +
+  geom_bar(
+    width = .5,
+    fill = "grey",
+    color = "black"
+  ) +
+  theme_minimal()
+```
+
+Gebruik je de functie `geom_col()` om een staafdiagram te maken? Dan hanteer je de functie `reorder()` zoals in het voorbeeld hieronder. De staven worden nu van klein naar groot georderd. Wil je de volgorde omdraaien? Plaats dan een - voor `count` (`x = reorder(species, -count)`). Probeer beide mogelijkheden uit.
+
+```{webr-r}
+count_data <- 
+  penguins %>%
+  count(species, name = "count")
+
+ggplot(
+  data = count_data,
+  aes(
+    x = reorder(species, count),
+    y = count
+    )
+  ) +
+  geom_col(
+    width = .5,
+    fill = "grey",
+    color = "black"
+  ) +
+  theme_minimal()
+```
+
+### Titel, subtitel en titel van de assen toevoegen
+
+Via de functie `labs()` kan je de labels van zowel de titel (*title*), subtitel (*subtitle*), als de namen van de x- en y-as aanpassen. Bedenk gepaste titels voor de staafdiagram over het aantal pinguïns per soort en vul de code hieronder aan.
+
+```{webr-r}
+ggplot(
+  data = penguins,
+  aes(
+    x = fct_infreq(species)
+    )
+  ) +
+  geom_bar(
+    width = .5,
+    fill = "grey",
+    color = "black"
+  ) +
+  labs(
+    x = "---",
+    y = "---",
+    title = "---",
+    subtitle = "---"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic"),
+  )
+```
+
+Aan de `theme()`-functie zijn twee argumenten toegevoegd om de lay-out van de tekst in de titel (**`plot.title = element_text(face = "bold")`**) en de subtitel (**`plot.subtitle = element_text(face = "italic")`**) aan te passen.
+
+### De staven labelen {#staaf-label}
+
+Tot nu toe moest de kijker de hoogte van de staven zelf aflezen op de y-as. Soms is het echter handig om boven elke staaf het aantal pinguïns te zetten. Dit kan je doen door een tweede *geom* te gebruiken: `geom_text()`. Je dient daarbij aan te geven welk label boven elke staaf geplaatst moet worden. Dat doe je door `aes(label = after_stat(count))` toe te voegen aan `geom_text()`. Het stukje `count` uit de code verwijst naar het getelde aantal pinguïns dat `ggplot2` op de achtergrond heeft berekend. Je dient `geom_text()` ook mee te geven welke variabele er op de x-as moet komen. In de code hieronder is er echter geen `x` *aesthetic* meegegeven. In dat geval 'erft' `geom_text()` de *aesthetics* van de `ggplot()`-functie.
+
+De betekenis van de drie andere argumenten die zijn toegevoegd aan `geom_text()` wordt hieronder uitgelegd:
+
+-   **stat**: geeft aan wat er precies boven de staaf geplaatst moet worden.
+-   **vjust**: de verticale positie van het label (0 = precies op de bovenkant van de staaf, \> 0 boven de staaf, \< 0 = onder de bovenkant van de staaf).
+-   **size**: bepaalt de grootte van de letters.
+-   **color**: bepaalt de kleur van de letters.
+
+Pas de waarden van de verschillende argumenten in de code hieronder aan en kijk wat er gebeurt.
+
+```{webr-r}
+ggplot(
+  data = penguins,
+  aes(
+    x = fct_infreq(species)
+    )
+  ) +
+  geom_bar(
+    width = .5,
+    fill = "grey",
+    color = "black"
+  ) +
+  geom_text(
+    aes(
+      x = species,
+      label = after_stat(count)
+      ),
+    stat = "count",
+    vjust = -0.2,
+    size = 3,
+    color = "black"
+    ) +
+  labs(
+    x = "Pinguïnsoort",
+    y = "Aantal",
+    title = "Staafdiagram van aantal pinguïns per soort",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic"),
+    panel.grid = element_blank(),
+    axis.title = element_blank(),
+    axis.text.x = element_blank()
+  )
+```
+
+Je hebt misschien opgemerkt dat er nog een beetje code is toegevoegd aan de `theme()`-functie. Met deze code zijn alle gridlijnen verwijderd (**`panel.grid = element_blank()`**) en is ook de titel van de y-as (**`axis.title.y = element_blank()`**) en de labels op de y-as verwijderd (**`axis.text.y = element_blank()`**).
+
+Als je `geom_col()` gebruikt, dan gebruik je andere code voor het toevoegen van de labels met getallen. Deze code vind je terug in het luikje rond het toevoegen van labels met getallen aan een dotplot (zie @sec-dotplot-label).
+
+### De assen van plaats veranderen
+
+Als de waarden van de variabele op de x-as heel lang zijn, is het handig om de x- en y-as van plaats te veranderen. (Denk bijvoorbeeld aan de labels van een Likert schaal: "Helemaal niet akkoord".) Door de assen van plaats te veranderen blijft de leesbaarheid van die waarden optimaal. Om de assen van plaats te veranderen, bestaat er een handige functie in `ggplot2`: `coord_flip()`.
+
+Kopieer de code hieronder naar RStudio op je eigen laptop en probeer deze uit. Zorg dat de packages `tidyverse` en `palmerpenguins` geladen zijn. Door hieronder op 'Plot' te klikken, vind je het verwachte resultaat terug.
+
+::: panel-tabset
+#### Code
+
+```{r eval = F, echo = T}
+ggplot(
+  data = penguins,
+  aes(
+    x = fct_infreq(species)
+    )
+  ) +
+  geom_bar(
+    width = .5,
+    fill = "grey",
+    color = "black"
+  ) +
+  geom_text(
+    aes(label = ..count..),
+    stat = "count",
+    hjust = -0.2, ## vjust wordt hjust
+    size = 3,
+    color = "black"
+    ) +
+  labs(
+    x = "Pinguïnsoort",
+    y = "Aantal",
+    title = "Staafdiagram van aantal pinguïns per soort",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009"
+  ) +
+  coord_flip() +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic"),
+    panel.grid = element_blank(),
+    axis.text.y = element_blank()
+  )
+```
+
+#### Plot
+
+```{r eval = T, echo = F, fig.width = 5, fig.height=5, fig.align = 'center'}
+ggplot(
+  penguins,
+  aes(
+    x = fct_infreq(species)
+    )
+  ) +
+  geom_bar(
+    width = .5,
+    fill = "grey",
+    color = "black"
+  ) +
+  geom_text(
+    aes(label = ..count..),
+    stat = "count",
+    hjust = -0.2, ## vjust wordt hjust
+    size = 3,
+    color = "black"
+    ) +
+  labs(
+    x = "Pinguïnsoort",
+    y = "Aantal",
+    title = "Staafdiagram van aantal pinguïns per soort",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009"
+  ) +
+  coord_flip() +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic"),
+    panel.grid = element_blank(),
+    axis.text.y = element_blank()
+  )
+```
+:::
+
+## Dotplot {#sec-dotplot}
+
+Een andere mogelijkheid om de verdeling van het aantal pinguïns per soort te visualiseren is een dotplot. Hieronder vind je een voorbeeld van een dotplot.
+
+```{r echo=F}
+ggplot(
+  data = count_data,
+  aes(
+    x = reorder(species, count),
+    y = count
+    )
+  ) +
+  geom_point(
+    shape = 21,
+    size = 2,
+    color = "black",
+    fill = "black",
+    alpha = .5
+  ) +
+  geom_text(
+    aes(label = count),
+    vjust = -0.5,
+    size = 3,
+    color = "black"
+  ) +
+  scale_y_continuous(
+    limits = c(0, 154),
+    name = NULL
+    ) +
+  labs(
+    x = "Pinguïnsoort",
+    title = "Dotplot van aantal pinguïns per soort",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic"),
+    panel.grid = element_blank(),
+    axis.text.y = element_blank(),
+  )
+```
+
+In `ggplot2` maak je een dotplot met behulp van `geom_point()`.
+
+### Dotplot met `geom_point()`
+
+Vooraleer je de dotplot kan maken, dien je eerst een dataset aan te maken die de frequenties per pinguïnsoort bevat (net zoals bij het maken van een staafdiagram met `geom_col()`). Deze dataset kan je vervolgens gebruiken om de dotplot te maken. Daarbij plaats je pinguïnsoort (`species`) op de x-as en het aantal pinguïns (`count`) op de y-as. De rest van de code zou je bekend moeten voorkomen. Deze is overgenomen van de code om een staafdiagram te maken.
+
+Kopieer de code hieronder naar RStudio op je eigen laptop en probeer deze uit. Door hieronder op 'Plot' te klikken, vind je het verwachte resultaat terug.
+
+::: panel-tabset
+#### Code
+
+```{r eval = F, echo = T}
+count_data <-
+  penguins %>%
+  count(species, name = "count")
+
+ggplot(
+  data = count_data,
+  aes(
+    x = species,
+    y = count
+    )
+  ) +
+  geom_point(
+  ) +
+  labs(
+    x = "Pinguïnsoort",
+    y = "Aantal",
+    title = "Dotplot van aantal pinguïns per soort",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic")
+  )
+```
+
+#### Plot
+
+```{r eval = T, echo = F, fig.width = 5, fig.height=5, fig.align = 'center'}
+count_data <-
+  penguins %>%
+  count(species, name = "count")
+
+ggplot(
+  count_data,
+  aes(
+    x = species,
+    y = count
+    )
+  ) +
+  geom_point(
+  ) +
+  labs(
+    x = "Pinguïnsoort",
+    y = "Aantal",
+    title = "Dotplot van aantal pinguïns per soort",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic")
+  )
+```
+:::
+
+### Basisargumenten `geom_point()` {#dotplot-basis}
+
+In de dotplot hieronder zijn er vier argumenten toegevoegd aan de functie `geom_point()`:
+
+-   **shape**: bepaalt de vorm van de punten en wordt aangegeven met een getal. [Hier](http://www.sthda.com/english/wiki/r-plot-pch-symbols-the-different-point-shapes-available-in-r){target="_blank"} vind je een overzicht van de beschikbare vormen in R. Afhankelijk van de vorm is het mogelijk om een kleur (`color`) en/of vulling (`fill`) te bepalen.\
+-   **size**: bepaalt de grootte van de punten (default = 0.5)\
+-   **color**: bepaalt de kleur van de lijn rond de punten (voor vormen 1 t.e.m. 14 en 21 t.e.m. 25)\
+-   **fill**: bepaalt de opvulkleur van de punten (voor vormen 15 t.e.m. 25)
+
+Laat de code hieronder lopen en bekijk de dotplot. Speel vervolgens met de waarden van de verschillende argumenten en kijk wat er gebeurt.
+
+```{webr-r}
+ggplot(
+  data = count_data,
+  aes(
+    x = species,
+    y = count
+    )
+  ) +
+  geom_point(
+    shape = 21,
+    size = 2,
+    color = "black",
+    fill = "steelblue"
+  ) +
+  labs(
+    x = "Pinguïnsoort",
+    y = "Aantal",
+    title = "Dotplot van aantal pinguïns per soort",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic")
+  )
+```
+
+### Dots ordenen
+
+Je kan de dots ook ordenen volgens grootte door de functie `reorder()` toe te voegen (**`x = reorder(species, count)`**) aan de `x`-*aesthetic*, analoog aan hoe we dit deden bij het maken van een geordende staafdiagram met `geom_col()`. De richting veranderen doe je door een "-" voor `count` te plaatsen (**`x = reorder(species, -count)`**).
+
+Kopieer de code hieronder naar RStudio op je eigen laptop en probeer deze uit. Door hieronder op 'Plot' te klikken, vind je het verwachte resultaat terug.
+
+::: panel-tabset
+#### Code
+
+```{r eval = F, echo = T}
+ggplot(
+  data = count_data,
+  aes(
+    x = reorder(species, count),
+    y = count
+    )
+  ) +
+  geom_point(
+    shape = 21,
+    size = 2,
+    color = "black",
+    fill = "steelblue"
+  ) +
+  labs(
+    x = "Pinguïnsoort",
+    y = "Aantal",
+    title = "Dotplot van aantal pinguïns per soort",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic")
+  )
+```
+
+#### Plot
+
+```{r eval = T, echo = F, fig.width = 5, fig.height=5, fig.align = 'center'}
+ggplot(
+  count_data,
+  aes(
+    x = reorder(species, count),
+    y = count
+    )
+  ) +
+  geom_point(
+    shape = 21,
+    size = 2,
+    color = "black",
+    fill = "steelblue"
+  ) +
+  labs(
+    x = "Pinguïnsoort",
+    y = "Aantal",
+    title = "Dotplot van aantal pinguïns per soort",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009"
+  ) +
+  theme_minimal() +
+    theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic")
+  )
+```
+:::
+
+### De dots labelen {#sec-dotplot-label}
+
+Net zoals bij het staafdiagram kan je de dots ook rechtsstreeks labelen door `geom_text()` toe te voegen aan de code. Hierbij wordt aangegeven dat de variabele `count` uit de dataset `count_data` moet worden gebruikt om de dots te labelen (`aes(label = count)`). Om ervoor te zorgen dat het label van de bovenste dot volledig wordt geplot, zijn de limieten van de y-as aangepast. Deze limieten geven aan wat de minimale en maximale waarde is die op de y-as wordt weergegeven. Daarom is ook de functie `scale_y_continuous()` toegevoegd aan de plot met als argument de juiste limieten (**`limits = c(0, 154)`**). In de functie wordt verder ook aangegeven dat er geen titel bij de y-as moet worden geplaatst (**`name = NULL`**). (De naam van de y-as is ook verwijderd uit de functie `labs()`.) Speel met de limieten van de y-as in de code hieronder en kijk wat er gebeurt met de dotplot.
+
+```{webr-r}
+ggplot(
+  data = count_data,
+  aes(
+    x = reorder(species, count),
+    y = count
+    )
+  ) +
+  geom_point(
+    shape = 21,
+    size = 2,
+    color = "black",
+    fill = "steelblue"
+    ) +
+  geom_text(
+    aes(label = count),
+    vjust = -0.5,
+    size = 3,
+    color = "grey50"
+  ) +
+  scale_y_continuous(
+    limits = c(0, 154),
+    name = NULL
+    ) +
+  labs(
+    x = "Pinguïnsoort",
+    title = "Dotplot van aantal pinguïns per soort",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic"),
+    panel.grid = element_blank(),
+    axis.text.y = element_blank(),
+  )
+```
+
+### Dots inkleuren volgens pinguïnsoort {#sec-dotplot-kleur}
+
+Tot nu toe hebben we alle dots dezelfde kleur gegeven. Het is echter ook mogelijk om de dots in te kleuren volgens pinguïnsoort. Het enige dat we daarvoor dienen te doen, is twee 'ingrediënten' (*aesthetics*) toevoegen aan de dotplot. In de code hieronder vind je deze extra *aesthetics* terug in de `aes()`-functie (**`color = species`** en **`fill = species`**). We voegen hier zowel `color` als `fill` toe, omdat de *shape* die we gebruiken (*shape* '21') een aparte kleur voor de vulling (`fill`) en voor de omtrek (`color`) toelaat. Vergeet ook niet om de argumenten voor `color` en `fill` die in `geom_point()` stonden weg te halen. Als je dat laatste niet doet, dan gebruikt `ggplot2` de argumenten die in `geom_point()` staan (omdat deze argumenten verderop in de code staan en dus als laatste geëvalueerd worden).
+
+Kopieer de code hieronder naar RStudio op je eigen laptop en probeer deze uit. Door hieronder op 'Plot' te klikken, vind je het verwachte resultaat terug.
+
+::: panel-tabset
+#### Code
+
+```{r eval = F, echo = T}
+ggplot(
+  data = count_data,
+  aes(
+    x = reorder(species, count),
+    y = count,
+    color = species,
+    fill = species
+    )
+  ) +
+  geom_point(
+    shape = 21,
+    size = 2
+  ) +
+  geom_text(
+    aes(label = count),
+    vjust = -0.5,
+    size = 3,
+    color = "grey50"
+  ) +
+  scale_y_continuous(
+    limits = c(0, 154),
+    name = NULL
+    ) +
+  labs(
+    x = "Pinguïnsoort",
+    y = "Aantal",
+    title = "Dotplot van aantal pinguïns per soort",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic"),
+    panel.grid = element_blank(),
+    axis.text.y = element_blank(),
+  )
+```
+
+#### Plot
+
+```{r eval = T, echo = F, fig.width = 5, fig.height=5, fig.align = 'center'}
+ggplot(
+  data = count_data,
+  aes(
+    x = reorder(species, count),
+    y = count,
+    color = species,
+    fill = species
+    )
+  ) +
+  geom_point(
+    shape = 21,
+    size = 2
+  ) +
+  geom_text(
+    aes(label = count),
+    vjust = -0.5,
+    size = 3,
+    color = "grey50"
+  ) +
+  scale_y_continuous(
+    limits = c(0, 154),
+    name = NULL
+    ) +
+  labs(
+    x = "Pinguïnsoort",
+    y = "Aantal",
+    title = "Dotplot van aantal pinguïns per soort",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic"),
+    panel.grid = element_blank(),
+    axis.text.y = element_blank(),
+  )
+```
+:::
+
+Je kan de kleuren zelf aanpassen met behulp van de functie `scale_color_manual()` (om de omtrek van de dots in te kleuren naar `species`) en `scale_fill_manual()` (om de opvulling van de dots in te kleuren naar `species`). Beide functies hebben één argument: **`values = c("darkorange","purple","cyan4")`**.
+
+```{webr-r}
+ggplot(
+  data = count_data,
+  aes(
+    x = reorder(species, count),
+    y = count,
+    color = species,
+    fill = species
+    )
+  ) +
+  geom_point(
+    shape = 21,
+    size = 2
+  ) +
+  geom_text(
+    aes(label = count),
+    vjust = -0.5,
+    size = 3,
+    color = "grey50"
+  ) +
+  scale_y_continuous(
+    limits = c(0, 154),
+    name = NULL
+    ) +
+  scale_color_manual(
+    values = c("darkorange","purple","cyan4")
+    ) +
+  scale_fill_manual(
+    values = c("darkorange","purple","cyan4")
+  ) +
+  labs(
+    x = "Pinguïnsoort",
+    y = "Aantal",
+    title = "Dotplot van aantal pinguïns per soort",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic"),
+    panel.grid = element_blank(),
+    axis.text.y = element_blank(),
+  )
+```
+
+## Lollipop plot {#sec-lollipop}
+
+Een dotplot is een goede opstap naar een lollipop plot. Hieronder vind je een voorbeeld van zo'n plot.
+
+```{r echo=F}
+count_data %>%
+  ggplot(
+    aes(
+      x = reorder(species, count),
+      y = count, 
+      color = species,
+      fill = species
+      )
+    ) + 
+  geom_point( 
+  ) +  
+  geom_segment(  
+    aes(
+      x = species,
+      xend = species,
+      y = 0,
+      yend = count
+      )
+    ) +
+  geom_text(
+    aes(label = count),
+    vjust = -0.5,
+    size = 3
+  ) +
+   labs(
+    title = "Dotplot van aantal pinguïns per soort",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009"
+  ) +
+  scale_x_discrete(position = "top", name = NULL) +
+  scale_y_continuous(name = NULL) +
+  scale_color_manual(
+    values = c("darkorange","purple","cyan4")
+  ) +
+  scale_fill_manual(
+    values = c("darkorange","purple","cyan4")
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic"),
+    panel.grid = element_blank(),
+    axis.text.y = element_blank(),
+    legend.position = "none"
+  )
+```
+
+### Lollipop plot met `geom_point()` en `geom_segment()`
+
+Als je de code hieronder bekijkt, dan zal je merken dat er eigenlijk maar een beetje extra code is toegevoegd aan de code voor de dotplot. We vertrekken nog steeds van de `count_data` en de staven van de lollipop plot worden geordend op frequentie (**`x = reorder(species, count)`**). Om een lollipop plot te creëren, dien je verder alleen de *geom* `geom_segment()` toe te voegen. Deze *geom* plot een lijn (een segment) en heeft vier ingrediënten (*aesthetics*) nodig om te kunnen werken. De argumenten `x` en `xend` geven het start- en eindpunt van de lijn op de x-as weer. In dit geval is de variabele op de x-as categorisch van aard (`species`). Je geeft deze variabele dan op als start- én eindpunt. De argumenten `y` en `yend` doen hetzelfde maar dan voor de y-as. In een lollipop plot vertrekt de lijn steeds vanuit 0 (**`y = 0`**) en heeft als eindpunt de frequentie van het aantal pinguïns (voor die soort). Aangezien die laatsten vervat zijn in de variabele `count` plaats je deze achter `yend`.
+
+Kopieer de code hieronder naar RStudio op je eigen laptop en probeer deze uit. Door hieronder op 'Plot' te klikken, vind je het verwachte resultaat terug.
+
+::: panel-tabset
+#### Code
+
+```{r eval = F, echo = T}
+count_data %>%
+  ggplot(
+    aes(
+      x = reorder(species, count),
+      y = count
+      )
+    ) + 
+  geom_point( 
+  ) +  
+  geom_segment(  
+    aes(
+      x = species,
+      xend = species, 
+      y = 0,
+      yend = count
+      )
+    ) +
+   labs(
+    x = "Pinguïnsoort",
+    y = "Aantal",
+    title = "Dotplot van aantal pinguïns per soort",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic")
+  )
+
+```
+
+#### Plot
+
+```{r eval = T, echo = F, fig.width = 5, fig.height=5, fig.align = 'center'}
+count_data %>%
+  ggplot(
+    aes(
+      x = reorder(species, count),
+      y = count
+      )
+    ) + 
+  geom_point( 
+  ) +  
+  geom_segment(  
+    aes(
+      x = species,
+      xend = species, 
+      y = 0,
+      yend = count
+      )
+    ) +
+   labs(
+    x = "Pinguïnsoort",
+    y = "Aantal",
+    title = "Dotplot van aantal pinguïns per soort",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic")
+  )
+```
+:::
+
+### De dots labelen
+
+De dots kunnen opnieuw gelabeld worden. Kopieer daarover de nodige code (zie @sec-dotplot-label) en plak deze in het codeblock hieronder. De code om de titel van de y-as, de labels op de y-as en de gridlijnen te verwijderen, is al toegevoegd (`scale_y_continuous(name = NULL)`).
+
+```{webr-r}
+count_data %>%
+  ggplot(
+    aes(
+      x = reorder(species, count),
+      y = count
+      )
+    ) + 
+  geom_point( 
+  ) +  
+  geom_segment(  
+    aes(
+      x = species,
+      xend = species, 
+      y = 0,
+      yend = count
+      )
+    ) +
+  # Vul hier de code aan
+  scale_y_continuous(name = NULL) +
+  labs(
+    x = "Pinguïnsoort",
+    title = "Dotplot van aantal pinguïns per soort",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic"),
+    panel.grid = element_blank(),
+    axis.text.y = element_blank(),
+  )
+```
+
+### Inkleuren volgens pinguïnsoort
+
+De lollipop plot kan vervolgens ook ingekleurd worden volgens pinguïnsoort. Daartoe dienen we twee extra aesthetics toe te voegen aan de `ggplot()`-functie: **`color = species`** en **`fill = species`**. Door dit in de `ggplot()`-functie toe te voegen, zal dit worden toegepast **op alle geoms die we verder gebruiken**. M.a.w. zowel in `geom_point()` als `geom_segment()` worden de geoms nu ingekleurd volgens pinguïnsoort. Merk op dat we ook de functie `scale_color_manual()` toevoegde aan de code.
+
+Kopieer de code hieronder naar RStudio op je eigen laptop enprobeer deze uit. Door hieronder op 'Plot' te klikken, vind je het verwachte resultaat terug.
+
+::: panel-tabset
+#### Code
+
+```{r eval = F, echo = T}
+count_data %>%
+  ggplot(
+    aes(
+      x = reorder(species, count),
+      y = count,
+      color = species,
+      fill = species
+      )
+    ) + 
+  geom_point( 
+  ) +  
+  geom_segment(  
+    aes(
+      x = species,
+      xend = species, 
+      y = 0,
+      yend = count
+      )
+    ) +
+  geom_text(
+    aes(label = count),
+    vjust = -0.5,
+    size = 3,
+    color = "grey50"
+  ) +
+  scale_y_continuous(name=NULL) +
+  labs(
+    x = "Pinguïnsoort",
+    title = "Dotplot van aantal pinguïns per soort",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009"
+  ) +
+  scale_color_manual(
+    values = c("darkorange","purple","cyan4")
+) +
+  scale_fill_brewer(
+    values = c("darkorange","purple","cyan4")
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic"),
+    panel.grid = element_blank(),
+    axis.text.y = element_blank(),
+  )
+```
+
+#### Plot
+
+```{r eval = T, echo = F, fig.width = 5, fig.height=5, fig.align = 'center'}
+count_data %>%
+  ggplot(
+    aes(
+      x = reorder(species, count),
+      y = count,
+      color = species,
+      fill = species
+      )
+    ) + 
+  geom_point( 
+  ) +  
+  geom_segment(  
+    aes(
+      x = species,
+      xend = species, 
+      y = 0,
+      yend = count
+      )
+    ) +
+  geom_text(
+    aes(label = count),
+    vjust = -0.5,
+    size = 3,
+    color = "grey50"
+  ) +
+  scale_y_continuous(name=NULL) +
+  labs(
+    x = "Pinguïnsoort",
+    title = "Dotplot van aantal pinguïns per soort",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009"
+  ) +
+  scale_color_manual(
+    values = c("darkorange","purple","cyan4")
+) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic"),
+    panel.grid = element_blank(),
+    axis.text.y = element_blank(),
+  )
+```
+:::
+
+### Labels bij dots inkleuren
+
+Zowel de lijnen als punten van de lollipop plot zijn ingekleurd volgens pinguïnsoort. Je vindt het misschien vreemd dat de tekst bij de dots nog steeds in het grijs is? Hierboven gaven we immers aan dat het toevoegen van **`color = species`** en **`fill = species`** aan de `ggplot()`-functie ervoor zorgt dat dit op alle *geoms* wordt toegepast. Waarom is dit dan niet togepast op `geom_text()`? Hieronder vind je de code terug. Welke codelijn moet je schrappen om ervoor te zorgen dat ook de labels bij de dots in de juiste kleur worden geplot? Schrap die code en probeer dit uit.
+
+```{webr-r}
+count_data %>%
+  ggplot(
+    aes(
+      x = reorder(species, count),
+      y = count,
+      color = species,
+      fill = species
+      )
+    ) + 
+  geom_point( 
+  ) +  
+  geom_segment(  
+    aes(
+      x = species,
+      xend = species, 
+      y = 0,
+      yend = count
+      )
+    ) +
+  geom_text(
+    aes(label = count),
+    vjust = -0.5,
+    size = 3,
+    color = "grey50"
+  ) +
+  scale_x_discrete(
+    position = "top",
+    name = NULL
+    ) +
+  scale_y_continuous(name=NULL) +
+  labs(
+    x = "Pinguïnsoort",
+    title = "Dotplot van aantal pinguïns per soort",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009"
+  ) +
+  scale_color_manual(
+    values = c("darkorange","purple","cyan4")
+) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic"),
+    panel.grid = element_blank(),
+    axis.text.y = element_blank(),
+    legend.position = "none"
+  )
+```
+
+Door **`color = "grey50"`** als argument te verwijderen uit `geom_text()` worden ook de labels van de dots in de juiste kleur geplot. Dit argument zorgde er immers voor dat het `color`- en `fill`-argument uit de `ggplot()`-functie werd 'overruled'. Je hebt misschien ook gemerkt dat de legende verdwenen is? Dit kan door het argument **`legend.position = "none"`** toe te voegen aan `theme()`. De legende verwijderen is hier mogelijk gemaakt door de labels op de x-as naar boven te verplaatsen. Voor dat laatste werd de functie `scale_x_discrete()` gebruikt (`scale_x_discrete()` en niet `scale_x_continuous()` omdat de variabele op de x-as categorisch van aard is). Met het argument **`position = "top"`** geef je aan dat je wil dat de x-as bovenaan de plot wordt geplaatst.
+
+## Overzicht van functies en argumenten uit hoofdstuk 3 (@sec-overzichtcat)
+
+De onderstaande functies en argumenten zijn in dit hoofdstuk aan bod gekomen:
+
+-   functies `geom_bar()` en `geom_col()` met *aesthetics* **`x`**, **`y`**, **`color`** en **`fill`** en de argumenten **`width`**, **`fill`** en **`color`**\
+-   functie `geom_text()` en de argumenten **`label`**, **`stat`**, **`vjust`**, **`size`** en **`color`**
+-   functie `geom_point()` en de argumenten **`shape`**, **`size`**, **`fill`** en **`color`**\
+-   functie `geom_segment()` en de argumenten **`x`**, **`xend`**, **`y`** en **`yend`**\
+-   functies `scale_x_discrete()` en `scale_y_continuous()` met de argumenten **`limits`** en **`name`**\
+-   functie `scale_color_manual()` met het argument **`values`**
+-   functie `labs()` met de argumenten **`title`**, **`subtitle`**, **`x`** en **`y`**
+-   functie `coord_flip()`
+-   functies `fct_infreq()` en `fct_rev()`
+-   functie `reorder()`
+
+De functie `theme()` en de argumenten die erbij horen, komen uitgebreid aan bod in het hoofdstuk 'Visualisatie in stijl'. Daarom worden ze hier niet opgelijst.
+
+Let op! De meeste functies beschikken over veel meer argumenten dan diegene die in dit hoofdstuk aan bod zijn uitgelegd. Voor een volledig overzicht van alle argumenten van een functie, kan je de help-functie gebruiken. Ook de specifieke *aesthetics* die je kan toevoegen aan elke `*geom*`-functie zijn uitgebreider dan je hier terug vindt. Daarover meer in de volgende hoofdstukken.

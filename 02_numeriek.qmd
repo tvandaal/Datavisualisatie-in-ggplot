@@ -1,0 +1,577 @@
+---
+title: "Eén numerieke variabele visualiseren"
+format: 
+  live-html:
+    toc: true
+    toc-title: "In dit hoofdstuk"
+    number-sections: true
+engine: knitr
+webr: 
+  packages: ['ggplot2', 'tidyverse', 'palmerpenguins']
+---
+
+{{< include ./_extensions/r-wasm/live/_knitr.qmd >}}
+
+```{r include=F}
+library(tidyverse)
+library(palmerpenguins)
+library(webr)
+```
+```{css, echo=F}
+p {
+  text-align: justify
+}
+.cell-output {
+  border: black .25pt solid;
+  border-radius: 4px;
+}
+```
+<em>Er bestaan verschillende manieren om de verdeling van een numerieke variabele voor te stellen. Twee veel gebruikte grafiektypes zijn een histogram en een boxplot. Dit hoofdstuk focust op hoe je deze grafieken kan maken met `ggplot2`. Eerst tonen we hoe je een histogram maakt (@sec-histogram). Vervolgens leer je een boxplot maken (@sec-boxplot). In beide gevallen maak je daarbij gebruik van de pinguïndata, en meer specifiek van de variabele  `flipper_length_mm` (vleugellengte). Op het einde van dit hoofdstuk vind je een overzicht van de verschillende functies en hun argumenten die je in dit hoofdstuk leerde (@sec-overzichtnum).</em>
+<br>
+<br>
+
+## Een histogram {#sec-histogram}
+
+Een eerste mogelijkheid om de verdeling van de variabele `flipper_length_mm` te visualiseren is een histogram. Hieronder vind je een voorbeeld van een histogram (die je op het einde van dit deel zelf zal kunnen maken).
+
+```{r echo=F, message = F, warning=F, fig.align='center'}
+ggplot(
+  data = penguins,
+  aes(
+    x = flipper_length_mm
+    )
+  ) +
+  geom_histogram(
+#    bins = 10,
+    binwidth = 5,
+    fill = "grey",
+    color = "black",
+    alpha = .8
+  ) +
+  scale_x_continuous(
+    breaks = seq(170, 230, 10)
+  ) +
+  scale_y_continuous(
+    breaks = c(seq(10, 50, 10), 57)
+  ) +
+  labs(
+    x = "Vleugellengte (in mm)",
+    y = "Absolute verdeling",
+    title = "Histogram van de variabele 'flipper_length_mm",
+    subtitle = "Gebaseerd op data van 2007, 2008 en 2009"
+  )  +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic"),
+    panel.grid.major.x  = element_blank(),
+    panel.grid.minor  = element_blank()
+  )
+```
+
+Om te leren hoe je een histogram creëert in `ggplot2` hanteren we de volgende opbouw (die je telkens zal zien terugkomen):  
+- je leert het *geom* om een histogram te plotten;    
+- je maakt kennis met de basisargumenten van de functie `geom_histogram()`;  
+- je leert één of meerdere generieke aspecten van het histogram aanpassen.   
+Met generieke aspecten bedoelen we zaken die je niet alleen bij het creëren van een histogram kan toepassen, maar ook bij het maken van elk ander type grafiek. Op het einde van het hoofstuk vind je een overzicht van alle functies die je in dat hoofdstuk leerde.
+
+### Histogram met `geom_histogram()`
+
+Om een histogram te plotten, maak je gebruik van het *geom* (de functie) `geom_histogram()`. Deze functie heeft één ingrediënt (*aesthetic*) nodig: een x-variabele (*`x = flipper_length_mm`* in het voorbeeld hieronder).   
+
+Kopieer de code hieronder naar een script in RStudio op je eigen laptop en probeer de code uit. Zorg dat de packages `tidyverse` en `palmerpenguins` geladen zijn. Door hieronder op 'Plot' te klikken, vind je het verwachte resultaat terug. 
+
+::: panel-tabset
+#### Code
+```{r eval = F, echo = T}
+ggplot(
+  data = penguins,
+  aes(
+    x = flipper_length_mm,
+    )
+  ) +
+  geom_histogram() +
+  theme_minimal()
+```
+
+#### Plot
+```{r eval = T, echo = F, fig.width = 5, fig.height=5, fig.align = 'center'}
+ggplot(
+  data = penguins,
+  aes(
+    x = flipper_length_mm,
+    )
+  ) +
+  geom_histogram() +
+  theme_minimal()
+```
+:::  
+
+Bij het uitvoeren van de code krijg je zowel een *warning* als een boodschap. De *warning* verwijst naar twee ontbrekende waarden in de variabele `flipper_length_mm`. Dit kan je checken via `summary()`.
+
+```{r}
+summary(penguins$flipper_length_mm)
+```
+
+Je krijgt ook nog een andere boodschap: `stat_bin() using bins = 30. Pick better value with binwidth`. Dit verwijst naar de manier waarop `geom_histogram()` de breedte van de 'bins' bepaalt.  Meer daarover hieronder!
+
+### Basisargumenten van `geom_histogram()`
+
+Het histogram dat je net maakte, bevat de absolute frequenties op de y-as. Als je een histogram met relatieve frequenties wil plotten, dan voeg je een tweede ingrediënt (*aesthetic*) toe aan de `ggplot()`-functie: **`y = after_stat(density)`**. In de code hieronder zijn nog enkele andere basisargumenten toegevoegd aan de functie `geom_histogram()`. Een overzicht van deze argumenten en hun betekenis vind je hier:
+
+- **bin**: geeft het aantal bins weer dat het histogram moet bevatten. Als je dit argument of het argument **binwidth** niet specificeert, dan wordt het aantal bins door `ggplot2` bepaald. In het voorbeeld besliste `ggplot2` om 30 bins te plotten. (Dat was de boodschap die `ggplot2` je hierboven meegaf.)      
+- **binwidth**: geeft de breedte van de bins in het histogram weer. Als je het argument **binwidth** gebruikt, wordt de waarde van **bins** genegeerd.   
+- **fill**: bepaalt de opvulkleur van het histogram.   
+- **color**: bepaalt de kleur van de lijn rondom het histogram.   
+
+Laat de code hieronder lopen en bekijk het histogram. Speel vervolgens met de waarden van de argumenten **bins**, **binwidth**, **fill** en **color** en kijk wat er gebeurt.
+
+```{webr-r}
+ggplot(
+  data = penguins,
+  aes(
+    x = flipper_length_mm,
+    y = after_stat(density)
+    )
+  ) +
+  geom_histogram(
+#    bins = 10,
+    binwidth = 5,
+    fill = "grey",
+    color = "black"
+  ) +
+  theme_minimal()
+```
+
+### Breaks op de x- en y-as specificeren
+
+Tot nu toe bepaalde `ggplot2` zelf de *breaks* (intervallen) op de x- en de y-as. Je kan deze *breaks* echter ook zelf specificeren. Daarvoor maak je gebruik van de functies `scale_x_continuous()` en `scale_y_continuous()`. Je voegt aan beide functies het argument **`breaks = ...`** toe. Op de plaats van de drie puntjes geef je dan aan welke *breaks* er moeten worden geplot.  
+
+De code hieronder geeft bijvoorbeeld aan dat op de x-as *breaks* de volgende breaks moeten worden geplaatst: 170, 180, 190, 200, 210, 220 en 230. Je zou deze breaks kunnen specificeren met de functie `c(170, 180, 190, 200, 210, 220, 230)`, maar het is veel handiger om daarvoor de functie **`seq(170, 230, 10)`** te gebruiken. Op de y-as wordt er ook een sequentie van breaks in sprongen van 10 geplot (**`seq(10, 50, 10)`**). Aan deze sequentie wordt echter nog de waarde 57 toegevoegd (met de functie **`c()`**). Deze waarde is informatief, want het is de hoogste waargenomen absolute frequentie.
+
+Laat de code hieronder lopen en bekijk het histogram. Specificeer zelf andere breaks en bekijk het effect ervan. (Merk op dat dit terug een histogram is dat de absolute frequentie voorstelt.)
+
+```{webr-r}
+ggplot(
+  data = penguins,
+  aes(
+    x = flipper_length_mm
+    )
+  ) +
+  geom_histogram(
+#    bins = 10,
+    binwidth = 5,
+    fill = "grey",
+    color = "black",
+    alpha = .8
+  ) +
+  scale_x_continuous(
+    breaks = seq(170, 230, 10)
+  ) +
+  scale_y_continuous(
+    breaks = c(seq(10, 50, 10), 57)
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid.major.x  = element_blank(),
+    panel.grid.minor  = element_blank()
+  )
+```
+
+Je hebt misschien opgemerkt dat er nog een argument is toegevoegd aan `geom_histogram()`: **`alpha = .8`**. Met dit argument bepaal je de transparantie van het histogram (meer specifiek van de `fill`-color). Standaard is de waarde voor dit argument 1 (niet-transparant). Door een waarde lager dan 1 mee te geven, verhoog je dus de transparantie van het histogram. Met de `theme()`-functie kan je de lay-out van de plot aanpassen. In dit geval zijn een deel van de gridlijnen ('minor' gridlijnen) verwijderd (**`panel.grid.minor = element_blank`**) en ook de belangrijkste gridlijnen ('major' gridlijnen) vertrekkend vanuit de x-as verwijderd (**`panel.grid.major.x = element_blank`**). In hoofdstuk 5 gaan we dieper in op de `theme()`-functie.
+
+### Titel, subtitel en titel van de assen toevoegen
+
+Via de functie `labs()` kan je de labels van zowel de titel (`title`), subtitel (`subtitle`), als de namen van de x- en y-as aanpassen. Vul de code hieronder aan met gepaste titels voor de x-as, de y-as en het histogram zelf.
+
+```{webr-r} 
+ggplot(
+  data = penguins,
+  aes(
+    x = flipper_length_mm
+    )
+  ) +
+  geom_histogram(
+#    bins = 10,
+    binwidth = 5,
+    fill = "grey",
+    color = "black",
+    alpha = .8
+  ) +
+  scale_x_continuous(
+    breaks = seq(170, 230, 10)
+  ) +
+  scale_y_continuous(
+    breaks = c(seq(10, 50, 10), 57)
+  ) +
+  labs(
+    x = "---",
+    y = "---",
+    title = "---",
+    subtitle = "---"
+  )  +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic"),
+    panel.grid.major.x  = element_blank(),
+    panel.grid.minor  = element_blank()
+  )
+```
+
+Aan de `theme()`-functie zijn nog twee argumenten toegevoegd om de lay-out van de tekst in de titel (**`plot.title = element_text(face = "bold")`**) en de subtitel (**`plot.subtitle = element_text(face = "italic")`**) aan te passen.
+
+## Boxplot {#sec-boxplot}
+
+Een andere mogelijkheid om de verdeling van de variabele `flipper-_length_mm` te visualiseren is een boxplot. Een voorbeeld van een boxplot vind je hieronder. 
+
+```{r echo=F, message = F, warning=F}
+ggplot(
+  data = penguins,
+  aes(
+    x = flipper_length_mm
+    )
+  ) +
+  geom_boxplot(
+    outliers = TRUE,
+    outlier.fill = "white",
+    fill = "grey",
+    color = "black",
+    alpha = 0.8
+  ) +
+  geom_jitter(
+    aes(y = 0),
+    height = .1,
+    shape = 1,
+    alpha = .3
+    ) +
+  scale_x_continuous(
+    breaks = seq(170, 230, 5),
+    position = "top"
+  ) + 
+  labs(
+    x = "Vleugellengte (in mm)",
+    y = " ",
+    title = "Boxplot van de verdeling van de variabele 'flipper_length_mm'",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic"),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+```
+
+### Boxplot met `geom_boxplot()`
+
+Om een boxplot te maken, gebruik je de functie `geom_boxplot()`. Deze functie heeft één ingrediënt (*aesthetic*) nodig: een x-variabele (**`x = flipper_length_mm`**) of een y-variabele (**`y = flipper_length_mm`**). 
+
+Kopieer de code hieronder naar een script in RStudio op je eigen laptop en probeer de code uit. Zorg dat de packages `tidyverse` en `palmerpenguins` geladen zijn. Door hieronder op 'Plot' te klikken, vind je het verwachte resultaat terug. Test ook uit wat er gebeurt als je de x in de functie `aes()` in een y verandert. 
+
+::: panel-tabset
+#### Code
+```{r eval = F, echo = T}
+ggplot(
+  data = penguins,
+  aes(
+    x = flipper_length_mm,
+    )
+  ) +
+  geom_boxplot() +
+  labs(
+    x = "Vleugellengte (in mm)",
+    title = "Boxplot van de verdeling van de variabele 'flipper_length_mm'",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic")
+  )
+```
+
+#### Plot
+```{r eval = T, echo = F, fig.width = 5, fig.height=5, fig.align = 'center'}
+ggplot(
+  data = penguins,
+  aes(
+    x = flipper_length_mm,
+    )
+  ) +
+  geom_boxplot() +
+  labs(
+    x = "Vleugellengte (in mm)",
+    title = "Boxplot van de verdeling van de variabele 'flipper_length_mm'",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic"),
+    axis.title.y = element_blank() 
+  )
+```
+:::  
+
+### Basisargumenten `geom_boxplot()`
+
+In het staafdiagram hieronder zijn er vier argumenten toegevoegd aan de functie `geom_bar()`:
+
+- **outliers**: geeft aan of er al dan niet outliers geplot moeten worden (TRUE or FALSE).   
+- **outlier.color**: bepaalt de kleur van outliers.   
+- **fill**: bepaalt de opvulkleur van de boxplot.  
+- **color**: bepaalt de kleur van de lijn rondom de boxplot.  
+- **alpha**: bepaalt de transparantie van de box van de boxplot (niet-transparant = 1, volledig transparant = 0).
+
+Laat de code hieronder lopen en bekijk de boxplot. Speel met de waarden van de argumenten **`fill`**, **`color`** en **`alpha`** en kijk wat er gebeurt. (Er zijn geen outliers! Spelen met de waarde van de argumenten **`outliers`** en **`outlier.color`** heeft in dit geval dus geen zin.)
+
+```{webr-r}
+ggplot(
+  data = penguins,
+  aes(
+    x = flipper_length_mm
+    )
+  ) +
+  geom_boxplot(
+    outliers = TRUE,
+    outlier.color = "darkred",
+    fill = "grey",
+    color = "black",
+    alpha = 0.8
+  ) +
+  labs(
+    x = "Vleugellengte (in mm)",
+    title = "Boxplot van de verdeling van de variabele 'flipper_length_mm'",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic")
+  )
+```
+
+### De x-as aanpassen
+
+Om de *breaks* op de x-as aan te passen, maken we opnieuw gebruik van de functie `scale_x_continuous()` en het argument **`breaks`**. Specificeer dit argument in de code hieronder zodanig dat de *breaks* starten op 170 en tot 230 doorlopen met sprongen van 5. Door ook het argument **`position = "top"`** aan de functie `scale_x_continuous()` toe te voegen wordt de x-as bovenaan de boxplot geplaatst.  
+
+```{webr-r}
+ggplot(
+  data = penguins,
+  aes(
+    x = flipper_length_mm
+    )
+  ) +
+  geom_boxplot(
+    outliers = TRUE,
+    outlier.color = "darkred",
+    fill = "grey",
+    color = "black",
+    alpha = 0.8
+  ) +
+  scale_x_continuous(
+    breaks = seq(_,_,_),
+    position = "top"
+  ) + 
+  labs(
+    x = "Vleugellengte (in mm)",
+    title = "Boxplot van de verdeling van de variabele 'flipper_length_mm'",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic"),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+```
+
+Omdat de waarden op de y-as dragen weinig informatief zijn, zijn deze verwijderd door het argument **`axis.text.y = element_blank()`** toe te voegen aan de `theme()`-functie. Ook de titel van de y-as is daarom verwijderd (**`axis.title.y = element_blank()`**)
+
+### De data toevoegen met `geom_jitter()`
+
+Een boxplot communiceert de verdeling van de variabele `flipper_length_mm` door enkele kengetallen samen te vatten. Dit maakt dat de onderliggende patronen in de data verborgen blijven. De onderstaande boxplots lijken identiek, maar ze verbergen een heleboel zaken. Je kan bijvoorbeeld niet aflezen hoe groot de steekproef is waarop elke  boxplot gebaseerd is. 
+
+```{r echo=F}
+set.seed(2021)
+grp1 <- 
+  tibble(
+    value = seq(0, 20, length.out = 75), 
+    group = "Group 1"
+    )
+
+grp2 <- 
+  tibble(
+    value = c(
+      rep(0, 5), 
+      rnorm(20, 2, .2), 
+      rnorm(50, 6, 1), 
+      rnorm(50, 14.5, 1),
+      rnorm(20, 18, .2),
+      rep(20, 5)
+      ),
+    group = "Group 2"
+    )
+
+grp3 <- tibble(
+  value = rep(seq(0, 20, length.out = 5), 5), 
+  group = "Group 3"
+  )
+
+data <- bind_rows(grp1, grp2, grp3)
+ggplot(
+  data, aes(x = group, y = value)) +
+  geom_boxplot(fill = "grey92") +
+  theme_minimal()
+```
+
+Ook de verdeling van de data zelf blijft onzichtbaar in een boxplot. Om dit op te lossen, kan je de data zelf ook toevoegen aan de boxplot. Dit kan je doen met behulp van `geom_point()` of `geom_jitter()`. Hieronder vind je een voorbeeld van beiden.
+
+```{r warning=F}
+# maak een plot met geom_point en schrijf deze weg in het object plot_point
+plot_point <- ggplot(
+  data = penguins,
+  aes(
+    x = flipper_length_mm
+    )
+  ) +
+  geom_boxplot(
+    outliers = TRUE,
+    outlier.color = "darkred",
+    fill = "grey",
+    color = "black",
+    alpha = 0.8
+  ) +
+  geom_point(
+    aes(y = 0),
+    shape = 1,
+    alpha = 0.3
+    ) +
+  scale_x_continuous(
+    breaks = seq(170, 230, 10),
+    position = "top"
+  ) + 
+  labs(
+    x = "Vleugellengte (in mm)",
+    title = "Data geplot met geom_point"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+
+# maak een plot met geom_jitter en schrijf deze weg in het object plot_point
+plot_jitter <- ggplot(
+  data = penguins,
+  aes(
+    x = flipper_length_mm
+    )
+  ) +
+  geom_boxplot(
+    outliers = TRUE,
+    outlier.color = "darkred",
+    fill = "grey",
+    color = "black",
+    alpha = 0.8
+  ) +
+  geom_jitter(
+    aes(y = 0),
+    height = .1,
+    shape = 1,
+    alpha = .3
+    ) +
+  scale_x_continuous(
+    breaks = seq(170, 230, 10),
+    position = "top"
+  ) + 
+  labs(
+    x = "Vleugellengte (in mm)",
+    title = "Data geplot met geom_jitter"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+
+# voeg beide plots samen tot 1 visualisatie met het package patchwork
+library(patchwork)
+plot_point + plot_jitter +
+  plot_annotation(tag_levels = "1", tag_prefix = "Plot ")
+```
+
+Het verschil tussen beide functies is dat `geom_jitter()` een beetje 'ruis' toevoegt aan elk datapunt zodat de punten niet precies boven op elkaar geplot worden. Dat laatste is wel het geval bij het gebruik van `geom_point` (Plot 1). Op die manier is het moeilijk in te schatten hoeveel datapunten er zijn.
+
+In de functie `geom_jitter()` zijn enkele extra argumenten meegegeven om de hoeveelheid 'ruis' om aan te geven hoeveel ruis er in de verticale richting moet worden toegevoegd (**`height = 0.1`**). Ook de grootte van elk datapunt (**`size = 1`**), de vorm die elk datapunt weergeeft (**`shape = 1`**) en de transparantie ervan (**`alpha = 0.3`**) is vastgelegd. In hoofdstuk 3 leer je meer over de verschillende vormen ('shapes') die beschikbaar zijn in R. Hieronder vind je de code terug waarin `geom_jitter()` wordt gebruikt. Speel met de waardes voor de argumenten **height**, **size** en **shape** en kijk wat er gebeurt!
+
+```{webr-r}
+ggplot(
+  data = penguins,
+  aes(
+    x = flipper_length_mm
+    )
+  ) +
+  geom_boxplot(
+    outliers = TRUE,
+    outlier.color = "darkred",
+    fill = "grey",
+    color = "black",
+    alpha = 0.8
+  ) +
+  geom_jitter(
+    aes(
+      x = flipper_length_mm, y = 0
+      ),
+    height = .1,
+    shape = 1,
+    alpha = .3
+    ) +
+  scale_x_continuous(
+    breaks = seq(170, 230, 5),
+    position = "top"
+  ) + 
+  labs(
+    x = "Vleugellengte (in mm)",
+    title = "Boxplot van de verdeling van de variabele 'flipper_length_mm'",
+    subtitle = "Gebaseerd op observaties in 2007, 2008 en 2009"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(face = "italic"),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+```
+
+Ben je benieuwd naar hoe verschillend of gelijkend de dataset achter de drie identieke boxplots is? Neem dan een kijkje op de [blog](https://www.cedricscherer.com/2021/06/06/visualizing-distributions-with-raincloud-plots-and-how-to-create-them-with-ggplot2/#boxplot){target="_blank"} van Cedric Schérer. Dit is één van de ggplot-wizards die regelmatig workshops geeft over `ggplot2`.
+
+## Overzicht van functies en argumenten uit hoofdstuk 2 {#sec-overzichtnum}
+
+De onderstaande functies en argumenten zijn in dit hoofdstuk aan bod gekomen:  
+
+- functie `geom_histogram()` met *aesthetic* **`x`** en de argumenten **`bins`**, **`binwidth`**, **`fill`**, **`color`** en **`alpha`**   
+- functie `geom_boxplot()` met *aesthetics* **`x`** of **`y`** en de argumenten **`outliers`**, **`outlier.fill`**, **`fill`**, **`color`** en **`alpha`**
+- functie `geom_jitter()` met *aesthetics* **`x`** en  **`y`** en de argumenten **`height`**, **`size`**, **`shape`** en **`alpha`**   
+- functies `scale_x_continuous()` en `scale_x_continuous()` met de argumenten **`breaks`** en **`position`**.   
+- functie `labs()` met de argumenten **`title`**, **`subtitle`**, **`x`** en **`y`**
+
+De functie `theme()` en de argumenten die erbij horen, komen uitgebreid aan bod in het hoofdstuk 'Visualisatie in stijl'. Daarom worden ze hier niet opgelijst.
+
+Let op! De meeste functies beschikken over veel meer argumenten dan diegene die in dit hoofdstuk aan bod zijn uitgelegd. Voor een volledig overzicht van alle argumenten van een functie, kan je de help-functie gebruiken. Ook de specifieke *aesthetics* die je kan toevoegen aan elke `*geom*`-functie zijn uitgebreider dan je hier terug vindt. Daarover meer in de volgende hoofdstukken.
